@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Dashboard</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dashboard">
+<style>
+:root{--bg:#EEF3F5;--card:#fff;--ink:#16262E;--muted:#5B6F7A;--line:#D5E0E5;--accent:#0E7C86;--accent-soft:#DDF0F2;--note:#FFF4D6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 "Segoe UI",system-ui,sans-serif}
+header{background:var(--ink);color:#fff;position:sticky;top:0;z-index:5}
+.bar{max-width:1100px;margin:0 auto;display:flex;align-items:center;gap:24px;padding:0 20px;overflow-x:auto}
+.brand{font:600 18px Georgia,serif;padding:14px 0;white-space:nowrap}
+nav{display:flex;gap:2px}
+nav a{color:#B9CBD3;text-decoration:none;padding:16px 14px;border-bottom:3px solid transparent;white-space:nowrap}
+nav a:hover{color:#fff}
+nav a.on{color:#fff;border-bottom-color:#4FC3CE}
+nav a:focus-visible,textarea:focus-visible{outline:3px solid #4FC3CE;outline-offset:-3px}
+main{max-width:1100px;margin:0 auto;padding:28px 20px 60px}
+h1{font:600 30px Georgia,serif;margin:0 0 4px}
+.sub{color:var(--muted);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+.card h2{font-size:17px;margin:0 0 8px}
+.empty{color:var(--muted);margin:0;font-size:15px}
+.note{background:var(--note);border-color:#EBD58E;grid-column:1/-1}
+.note textarea{width:100%;border:1px solid #EBD58E;border-radius:6px;padding:10px;font:inherit;background:#fff;resize:vertical;min-height:60px}
+.saved{font-size:13px;color:var(--muted);margin:6px 0 0;min-height:20px}
+.later{max-width:520px}
+.form{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-bottom:18px}
+.form label{display:flex;flex-direction:column;font-size:13px;color:var(--muted);gap:3px}
+.form input,.form select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink)}
+.form .t{flex:1 1 240px}.form .t input{width:100%}
+button{font:inherit;background:var(--accent);color:#fff;border:0;border-radius:6px;padding:9px 16px;cursor:pointer}
+button:hover{background:#0A6169}button.x{background:none;color:var(--muted);padding:4px 8px}button.x:hover{color:#B3261E;background:none}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #4FC3CE;outline-offset:1px}
+ul.tasks{list-style:none;margin:0;padding:0}
+ul.tasks li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}
+ul.tasks li:first-child{border-top:0}
+ul.tasks input[type=checkbox]{width:20px;height:20px;accent-color:var(--accent)}
+.tt{flex:1}.meta{font-size:13px;color:var(--muted)}
+.over .meta{color:#B3261E;font-weight:600}
+.pill{font-size:12px;border-radius:10px;padding:1px 8px;background:var(--accent-soft);color:#0A5A62}
+.pill.High{background:#FBE0DD;color:#8C1D18}.pill.Low{background:#E8EDEF;color:var(--muted)}
+.done li{opacity:.6;text-decoration:line-through}
+.cal{overflow-x:auto}.cg{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));min-width:770px;border-left:1px solid var(--line);border-top:1px solid var(--line);background:#fff}
+.ch{padding:6px 8px;font-size:13px;color:var(--muted);background:var(--accent-soft);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cd{min-height:96px;padding:4px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font-size:13px}
+.cd.out{background:#F6F9FA;color:#9AAAB2}.cd.now{background:#EAF7F8}
+.cd b{display:block;font-weight:600;margin-bottom:2px}.cd.now b{color:var(--accent)}
+.ev,.tk{padding:1px 5px;border-radius:4px;margin-bottom:2px;overflow-wrap:anywhere}
+.ev{background:var(--accent);color:#fff}.tk{background:#FFF4D6;border-left:3px solid #D9A400;color:#5A4500}.tk.od{background:#FBE0DD;border-left-color:#B3261E;color:#8C1D18}
+.tools{display:flex;gap:8px;align-items:center;margin:14px 0}.tools h2{flex:1;margin:0;font-size:19px}
+button.alt{background:#fff;color:var(--ink);border:1px solid var(--line)}button.alt:hover{background:var(--accent-soft)}button.sel{background:var(--ink);color:#fff;border-color:var(--ink)}
+.legend{font-size:13px;color:var(--muted)}
+.bk{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}.bk textarea{width:100%;min-height:110px;font:13px monospace;border:1px solid var(--line);border-radius:6px;padding:8px}
+.card p{margin:6px 0}
+.chart{display:flex;align-items:flex-end;gap:4px;height:150px;padding-top:18px}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;color:var(--muted)}
+.col i{display:block;width:100%;background:var(--accent);border-radius:3px 3px 0 0;min-height:0}
+.col.now i{background:#0A5A62}.col span{margin-top:3px}
+.pie{display:flex;flex-wrap:wrap;gap:16px;align-items:center}
+.leg{list-style:none;margin:0;padding:0;font-size:14px;flex:1;min-width:170px}
+.leg li{display:flex;gap:8px;align-items:center;padding:2px 0}.leg b{margin-left:auto;font-weight:600}
+.sw{width:12px;height:12px;border-radius:3px;flex:none}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;margin-top:16px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 16px}
+.tile{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+.tile small{display:block;color:var(--muted);font-size:13px}.tile strong{font:600 24px Georgia,serif}
+.tile.left{background:var(--accent-soft);border-color:#A9D8DC}.neg{color:#B3261E}
+.pf{display:grid;grid-template-columns:minmax(0,2fr) minmax(260px,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:800px){.pf{grid-template-columns:1fr}}
+.tw{overflow-x:auto}table{border-collapse:collapse;width:100%;font-size:14px;min-width:520px}
+th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}td.n,th.n{text-align:right}
+td input{width:96px;font:inherit;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:right}
+.pos{color:#1B7A3E}
+h3{font-size:15px;color:var(--muted);margin:22px 0 6px}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <div class="brand">My Dashboard</div>
+  <nav id="nav"></nav>
+</div></header>
+<main id="page"></main>
+
+<script>
+var PAGES=["Today","Tasks","Calendar","Time","Money","Portfolio","Settings"];
+var LATER={Calendar:"Your appointments and weekly schedule will live here.",
+Time:"Quick add for Anki, studying, martial arts, work, eating, sleep and other, with graphs.",
+Money:"Quick add for income and costs, with monthly totals and graphs.",
+Portfolio:"Your Trade Republic and Smartbroker+ holdings, with profit and loss.",
+Settings:"Your reminder note, categories, backup and export buttons will live here."};
+var DEFAULT_NOTE="Log today's costs and income.";
+
+function getNote(){try{return localStorage.getItem("reminderNote")||DEFAULT_NOTE}catch(e){return DEFAULT_NOTE}}
+function saveNote(v){try{localStorage.setItem("reminderNote",v);return true}catch(e){return false}}
+
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function load(k){try{return JSON.parse(localStorage.getItem(k))||[]}catch(e){return[]}}
+function save(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(e){alert("Could not save. Open this file in Chrome or Edge.");return false}}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function todayStr(){return iso(new Date())}
+function addDays(s,n){var d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)}
+function addMonth(s){var d=new Date(s+"T12:00:00"),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);var m=d.getMonth();d.setDate(day);if(d.getMonth()!==m)d.setDate(0);return iso(d)}
+var RANK={High:0,Medium:1,Low:2};
+function sortTasks(a,b){return (a.due||"9999").localeCompare(b.due||"9999")||RANK[a.prio]-RANK[b.prio]}
+function repLabel(t){return t.rep==="week"?"repeats weekly":t.rep==="month"?"repeats monthly":t.rep==="after"?"repeats "+t.n+" days after done":""}
+function niceDate(s){return s?new Date(s+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):"No deadline"}
+function taskRow(t,full){
+  var od=!t.done&&t.due&&t.due<todayStr();
+  return '<li class="'+(od?"over":"")+'"><input type="checkbox" data-id="'+t.id+'" aria-label="Mark done: '+esc(t.title)+'"'+(t.done?" checked":"")+'>'+
+  '<div class="tt">'+esc(t.title)+'<div class="meta">'+(od?"Overdue: ":"")+niceDate(t.due)+(repLabel(t)&&full?" · "+repLabel(t):"")+'</div></div>'+
+  '<span class="pill '+t.prio+'">'+t.prio+'</span>'+(full?'<button class="x" data-del="'+t.id+'" aria-label="Delete task">Delete</button>':"")+'</li>'}
+function toggle(id){
+  var ts=load("tasks"),t=ts.filter(function(x){return x.id==id})[0];if(!t)return;
+  t.done=!t.done;
+  if(t.done&&t.rep&&t.rep!=="none"&&!t.spawned){
+    var nd=t.rep==="week"?addDays(t.due||todayStr(),7):t.rep==="month"?addMonth(t.due||todayStr()):addDays(todayStr(),t.n);
+    ts.push({id:Date.now(),title:t.title,due:nd,prio:t.prio,rep:t.rep,n:t.n,done:false});t.spawned=true}
+  save("tasks",ts);render()}
+function tasksPage(){
+  var ts=load("tasks"),open=ts.filter(function(t){return!t.done}).sort(sortTasks),done=ts.filter(function(t){return t.done});
+  var h='<h1>Tasks</h1><p class="sub">Tick a task to finish it. Repeating tasks create their next copy automatically.</p>'+
+  '<form class="form" id="tf"><label class="t">Task<input id="tt" required maxlength="120"></label>'+
+  '<label>Deadline<input type="date" id="td"></label>'+
+  '<label>Priority<select id="tp"><option>High</option><option selected>Medium</option><option>Low</option></select></label>'+
+  '<label>Repeat<select id="tr"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option><option value="after">Days after I finish</option></select></label>'+
+  '<label id="tnl" hidden>Days<input type="number" id="tn" min="1" value="7" style="width:70px"></label>'+
+  '<button type="submit">Add task</button></form>';
+  h+='<section class="card">'+(open.length?'<ul class="tasks">'+open.map(function(t){return taskRow(t,1)}).join("")+'</ul>':'<p class="empty">No open tasks. Add your first one above.</p>')+'</section>';
+  if(done.length)h+='<h3>Done</h3><section class="card done"><ul class="tasks">'+done.map(function(t){return taskRow(t,1)}).join("")+'</ul></section>';
+  return h}
+function bindTasks(){
+  var f=document.getElementById("tf");
+  if(f){document.getElementById("tr").onchange=function(){document.getElementById("tnl").hidden=this.value!=="after"};
+    f.onsubmit=function(e){e.preventDefault();var ts=load("tasks");
+      ts.push({id:Date.now(),title:document.getElementById("tt").value.trim(),due:document.getElementById("td").value,prio:document.getElementById("tp").value,rep:document.getElementById("tr").value,n:Math.max(1,parseInt(document.getElementById("tn").value)||7),done:false});
+      if(save("tasks",ts))render()}}
+  document.querySelectorAll("input[data-id]").forEach(function(c){c.onchange=function(){toggle(c.dataset.id)}});
+  document.querySelectorAll("button[data-del]").forEach(function(b){b.onclick=function(){save("tasks",load("tasks").filter(function(t){return t.id!=b.dataset.del}));render()}})}
+function todoCard(){
+  var open=load("tasks").filter(function(t){return!t.done}).sort(sortTasks),td=todayStr();
+  var over=open.filter(function(t){return t.due&&t.due<td}).length,dueT=open.filter(function(t){return t.due===td}).length;
+  if(!open.length)return '<section class="card"><h2>To-do</h2><p class="empty">No open tasks. <a href="#Tasks">Add one</a>.</p></section>';
+  return '<section class="card"><h2>To-do</h2><p class="meta">'+over+' overdue · '+dueT+' due today · '+open.length+' open</p><ul class="tasks">'+open.slice(0,5).map(function(t){return taskRow(t,0)}).join("")+'</ul></section>'}
+
+var calView="month",calAnchor=todayStr();
+function loadA(){return load("appts")}
+function occurs(a,day){
+  if(day<a.date)return false;
+  if(!a.rep||a.rep==="none")return day===a.date;
+  if(a.rep==="week")return Math.round((new Date(day+"T12:00:00")-new Date(a.date+"T12:00:00"))/864e5)%7===0;
+  return day.slice(8)===a.date.slice(8)}
+function apptsOn(day){return loadA().filter(function(a){return occurs(a,day)}).sort(function(a,b){return (a.start||"").localeCompare(b.start||"")})}
+function tasksOn(day){return load("tasks").filter(function(t){return!t.done&&t.due===day})}
+function weekStart(s){var d=new Date(s+"T12:00:00");return addDays(s,-((d.getDay()+6)%7))}
+function apptLabel(a){return (a.start?a.start+(a.end?"-"+a.end:"")+" ":"")+a.title}
+function calPage(){
+  var d=new Date(calAnchor+"T12:00:00"),days=[],title;
+  if(calView==="week"){var ws=weekStart(calAnchor);for(var i=0;i<7;i++)days.push(addDays(ws,i));
+    title=niceDate(days[0])+" to "+niceDate(days[6])}
+  else{var first=iso(new Date(d.getFullYear(),d.getMonth(),1)),st=weekStart(first),m=d.getMonth();
+    for(var j=0;j<42;j++){var x=addDays(st,j);if(j>=35&&new Date(x+"T12:00:00").getMonth()!==m)break;days.push(x)}
+    title=d.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}
+  var td=todayStr(),mon=d.getMonth();
+  var h='<h1>Calendar</h1><p class="sub">Appointments and task deadlines in one place.</p>'+
+  '<form class="form" id="af"><label class="t">Appointment<input id="at" required maxlength="120"></label>'+
+  '<label>Date<input type="date" id="ad" value="'+td+'" required></label>'+
+  '<label>Start<input type="time" id="as"></label><label>End<input type="time" id="ae"></label>'+
+  '<label>Repeat<select id="ar"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label>'+
+  '<button type="submit">Add appointment</button></form>'+
+  '<div class="tools"><h2>'+title+'</h2><button class="alt'+(calView==="week"?" sel":"")+'" data-v="week">Week</button><button class="alt'+(calView==="month"?" sel":"")+'" data-v="month">Month</button>'+
+  '<button class="alt" data-n="-1" aria-label="Previous">Previous</button><button class="alt" data-n="0">Today</button><button class="alt" data-n="1" aria-label="Next">Next</button></div>'+
+  '<div class="cal"><div class="cg">'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(function(n){return '<div class="ch">'+n+'</div>'}).join("");
+  days.forEach(function(x){
+    var out=calView==="month"&&new Date(x+"T12:00:00").getMonth()!==mon;
+    h+='<div class="cd'+(out?" out":"")+(x===td?" now":"")+'"><b>'+parseInt(x.slice(8))+'</b>'+
+    apptsOn(x).map(function(a){return '<div class="ev">'+esc(apptLabel(a))+'</div>'}).join("")+
+    tasksOn(x).map(function(t){return '<div class="tk'+(x<td?" od":"")+'">Task: '+esc(t.title)+'</div>'}).join("")+'</div>'});
+  h+='</div></div><p class="legend">Blue: appointments. Yellow: tasks due that day (red if overdue). Tick tasks on the Tasks page.</p>';
+  var all=loadA().sort(function(a,b){return a.date.localeCompare(b.date)});
+  h+='<h3>All appointments</h3><section class="card">'+(all.length?'<ul class="tasks">'+all.map(function(a){
+    return '<li><div class="tt">'+esc(a.title)+'<div class="meta">'+niceDate(a.date)+(a.start?", "+a.start+(a.end?" to "+a.end:""):"")+(a.rep==="week"?" · repeats weekly":a.rep==="month"?" · repeats monthly":"")+'</div></div><button class="x" data-adel="'+a.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No appointments yet. Add your first one above.</p>')+'</section>';
+  return h}
+function bindCal(){
+  var f=document.getElementById("af");if(!f)return;
+  f.onsubmit=function(e){e.preventDefault();var a=loadA();
+    a.push({id:Date.now(),title:document.getElementById("at").value.trim(),date:document.getElementById("ad").value,start:document.getElementById("as").value,end:document.getElementById("ae").value,rep:document.getElementById("ar").value});
+    if(save("appts",a))render()};
+  document.querySelectorAll("button[data-v]").forEach(function(b){b.onclick=function(){calView=b.dataset.v;render()}});
+  document.querySelectorAll("button[data-n]").forEach(function(b){b.onclick=function(){var n=+b.dataset.n;
+    if(n===0)calAnchor=todayStr();else if(calView==="week")calAnchor=addDays(calAnchor,7*n);else{var d=new Date(calAnchor+"T12:00:00");d.setDate(1);d.setMonth(d.getMonth()+n);calAnchor=iso(d)}render()}});
+  document.querySelectorAll("button[data-adel]").forEach(function(b){b.onclick=function(){save("appts",loadA().filter(function(a){return a.id!=b.dataset.adel}));render()}})}
+function apptCard(){
+  var td=todayStr(),list=[];
+  for(var i=0;i<14&&list.length<6;i++){var day=addDays(td,i);apptsOn(day).forEach(function(a){list.push([day,a])})}
+  return '<section class="card"><h2>Appointments</h2>'+(list.length?'<ul class="tasks">'+list.slice(0,5).map(function(p){
+    return '<li><div class="tt">'+esc(p[1].title)+'<div class="meta">'+(p[0]===td?"Today":niceDate(p[0]))+(p[1].start?", "+p[1].start:"")+'</div></div></li>'}).join("")+'</ul>':'<p class="empty">Nothing in the next 14 days. <a href="#Calendar">Add one</a>.</p>')+'</section>'}
+
+var DL=null;
+try{if(window.claude&&claude.use)claude.use("downloads").then(function(d){DL=d;if(decodeURIComponent(location.hash.slice(1))==="Settings")render()}).catch(function(){})}catch(e){}
+if(!window.claude){DL={save:function(o){return new Promise(function(res,rej){try{var b=new Blob([o.data],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=o.filename;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);res({status:"saved"})}catch(e){rej(e)}})}}}
+function exportData(){var o={};try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);o[k]=localStorage.getItem(k)}}catch(e){}
+  return JSON.stringify({app:"my-dashboard",saved:new Date().toISOString(),data:o},null,1)}
+function markBackup(){try{localStorage.setItem("lastBackup",new Date().toISOString())}catch(e){}}
+function lastBackup(){try{var v=localStorage.getItem("lastBackup");return v?new Date(v):null}catch(e){return null}}
+function backupLine(){var b=lastBackup();
+  if(!b)return '<p class="meta">No backup yet. <a href="#Settings">Make one in Settings</a>.</p>';
+  var days=Math.floor((Date.now()-b)/864e5);
+  return '<p class="meta">Last backup: '+(days<1?"today":days+" days ago")+(days>=30?' · <a href="#Settings">time for a new one</a>':"")+'</p>'}
+function settingsPage(){
+  var b=lastBackup();
+  var h='<h1>Settings</h1><p class="sub">Backups protect your data if Safari is cleared or you change phone.</p>'+
+  goalsCard()+'<section class="card"><h2>Back up</h2><p class="meta">Last backup: '+(b?b.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"never")+'. Aim for once a month.</p>'+
+  '<div class="bk">'+(DL?'<button id="bsave">Save backup file</button>':'')+'<button class="alt" id="bshow">Show backup as text</button></div>'+
+  '<div id="btext"></div><p class="meta">The file or text contains everything you entered. Keep it somewhere you trust, like your Files app or a note.</p></section>'+
+  '<h3>Restore</h3><section class="card"><h2>Restore from a backup</h2><p class="meta">This replaces everything currently in the dashboard.</p>'+
+  '<div class="bk"><input type="file" id="rfile" accept=".json,application/json"></div>'+
+  '<p class="meta">Or paste your backup text here:</p><textarea id="rtext" style="width:100%;min-height:80px;border:1px solid var(--line);border-radius:6px;padding:8px" aria-label="Backup text"></textarea>'+
+  '<div class="bk"><button id="rgo">Restore</button></div><p class="saved" id="rmsg"></p></section>';
+  return h}
+function restore(txt){
+  var o;try{o=JSON.parse(txt)}catch(e){o=null}
+  var m=document.getElementById("rmsg");
+  if(!o||o.app!=="my-dashboard"||typeof o.data!=="object"){m.textContent="That does not look like a backup from this dashboard.";return}
+  
+  try{localStorage.clear();Object.keys(o.data).forEach(function(k){localStorage.setItem(k,o.data[k])})}catch(e){m.textContent="Could not restore.";return}
+  location.hash="#Today";render()}
+function bindSettings(){
+  var s=document.getElementById("bsave");if(!document.getElementById("bshow"))return;
+  if(DL&&s)s.onclick=function(){var d=new Date().toISOString().slice(0,10);
+    DL.save({filename:"dashboard-backup-"+d+".json",data:exportData()}).then(function(){markBackup();render()}).catch(function(){})};
+  document.getElementById("bshow").onclick=function(){
+    document.getElementById("btext").innerHTML='<textarea id="bt" readonly aria-label="Backup text" style="width:100%;min-height:120px;font:12px monospace;border:1px solid var(--line);border-radius:6px;padding:8px"></textarea><div class="bk"><button class="alt" id="bdone">I have copied and saved it</button></div>';
+    var t=document.getElementById("bt");t.value=exportData();t.focus();t.select();
+    document.getElementById("bdone").onclick=function(){markBackup();render()}};
+  document.getElementById("rfile").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById("rtext").value=r.result;document.getElementById("rmsg").textContent="File loaded. Tap Restore."};r.readAsText(f)};
+  armed(document.getElementById("rgo"),function(){restore(document.getElementById("rtext").value)},"Tap again to replace all data")}
+
+var CATS=["Anki","Studying (no electronics)","Martial arts","Work","Eating","Sleep","Other"];
+var COLS=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#8A9AA3"];
+var timeRange=7;
+function fh(n){return (Math.round(n*100)/100)+" h"}
+function tload(){return load("time")}
+function catTotals(entries){return CATS.map(function(c,i){return{label:c,color:COLS[i],value:entries.filter(function(e){return e.cat===c}).reduce(function(a,e){return a+e.h},0)}})}
+function pie(items,fmt){fmt=fmt||fh;
+  var tot=items.reduce(function(a,i){return a+i.value},0);
+  if(!tot)return '<p class="empty">Nothing to show yet.</p>';
+  var cx=80,cy=80,r=72,a=-Math.PI/2,svg='<svg viewBox="0 0 160 160" width="160" height="160" role="img" aria-label="Pie chart">';
+  items.forEach(function(it){if(it.value<=0)return;var f=it.value/tot;
+    if(f>0.9999){svg+='<circle cx="80" cy="80" r="72" fill="'+it.color+'"/>';return}
+    var a2=a+f*2*Math.PI;
+    svg+='<path d="M80 80 L'+(cx+r*Math.cos(a)).toFixed(2)+' '+(cy+r*Math.sin(a)).toFixed(2)+' A72 72 0 '+(f>0.5?1:0)+' 1 '+(cx+r*Math.cos(a2)).toFixed(2)+' '+(cy+r*Math.sin(a2)).toFixed(2)+' Z" fill="'+it.color+'"/>';a=a2});
+  svg+='<circle cx="80" cy="80" r="38" fill="#fff"/></svg>';
+  return '<div class="pie">'+svg+'<ul class="leg">'+items.filter(function(i){return i.value>0}).map(function(i){
+    return '<li><span class="sw" style="background:'+i.color+'"></span>'+esc(i.label)+'<b>'+fmt(i.value)+'</b></li>'}).join("")+'</ul></div>'}
+function lastDays(n){var o=[],t=todayStr();for(var i=n-1;i>=0;i--)o.push(addDays(t,-i));return o}
+function timePage(){
+  var es=tload(),days=lastDays(14),tot=days.map(function(d){return es.filter(function(e){return e.date===d}).reduce(function(a,e){return a+e.h},0)});
+  var mx=Math.max.apply(null,tot.concat([1])),td=todayStr();
+  var range=lastDays(timeRange),inR=es.filter(function(e){return range.indexOf(e.date)>=0});
+  var h='<h1>Time</h1><p class="sub">Add each activity as you finish it. Totals and graphs update on their own.</p>'+
+  '<form class="form" id="tmf"><label>Activity<select id="tc">'+CATS.map(function(c){return '<option>'+c+'</option>'}).join("")+'</select></label>'+
+  '<label>Hours<input type="number" id="th" min="0.05" max="24" step="0.05" required style="width:90px" placeholder="1.5"></label>'+
+  '<label>Date<input type="date" id="tdt" value="'+td+'" required></label><label>Repeat<select id="trp"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label><button type="submit">Add</button></form>'+
+  goalsBlock()+'<div class="two"><section class="card"><h2>Hours per day</h2><div class="chart">'+days.map(function(d,i){
+    return '<div class="col'+(d===td?" now":"")+'" title="'+d+': '+fh(tot[i])+'">'+(tot[i]?fh(tot[i]).replace(" h",""):"")+'<i style="height:'+Math.round(tot[i]/mx*100)+'%"></i><span>'+parseInt(d.slice(8))+'</span></div>'}).join("")+'</div><p class="meta">Last 14 days, all activities together.</p></section>'+
+  '<section class="card"><h2>Where the time goes</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(timeRange===7?" sel":"")+'" data-tr="7">Last 7 days</button><button class="alt'+(timeRange===30?" sel":"")+'" data-tr="30">Last 30 days</button></div>'+pie(catTotals(inR))+'</section></div>';
+  h+=timeOverCard();var rec=es.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id}).slice(0,15);
+  h+='<h3>Recent entries</h3><section class="card">'+(rec.length?'<ul class="tasks">'+rec.map(function(e){
+    return '<li><div class="tt">'+esc(e.cat)+'<div class="meta">'+niceDate(e.date)+'</div></div><b>'+fh(e.h)+'</b><button class="x" data-tdel="'+e.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No hours logged yet. Add your first entry above.</p>')+'</section>';h+=timeRulesCard();
+  return h}
+function bindTime(){
+  var f=document.getElementById("tmf");if(!f)return;
+  f.onsubmit=function(e){e.preventDefault();var hh=parseFloat(document.getElementById("th").value);
+    if(!(hh>0&&hh<=24))return;
+    var rep=document.getElementById("trp").value,date=document.getElementById("tdt").value,cat=document.getElementById("tc").value;
+    if(rep==="none"){var es=tload();es.push({id:Date.now(),date:date,cat:cat,h:hh});if(!save("time",es))return}
+    else{var rs=load("trules");rs.push({id:Date.now(),start:date,rep:rep,k:0,cat:cat,h:hh});if(!save("trules",rs))return;applyTimeRules()}
+    render()};
+  document.querySelectorAll("button[data-tr]").forEach(function(b){b.onclick=function(){timeRange=+b.dataset.tr;render()}});
+  document.querySelectorAll("button[data-tdel]").forEach(function(b){b.onclick=function(){save("time",tload().filter(function(e){return e.id!=b.dataset.tdel}));render()}})}
+function timeCard(){
+  var es=tload().filter(function(e){return e.date===todayStr()}),tot=es.reduce(function(a,e){return a+e.h},0);
+  if(!es.length)return '<section class="card"><h2>Time logged today</h2><p class="empty">No hours logged yet. <a href="#Time">Add some</a>.</p></section>';
+  return '<section class="card"><h2>Time logged today</h2><p class="meta">Total: '+fh(tot)+'</p>'+pie(catTotals(es))+'</section>'}
+function sleepCard(){
+  var es=tload().filter(function(e){return e.cat==="Sleep"});
+  if(!es.length)return '<section class="card"><h2>Sleep</h2><p class="empty">No sleep logged yet. <a href="#Time">Add it</a> under Time.</p></section>';
+  var last=es.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id})[0],wk=lastDays(7),
+  per=wk.map(function(d){return es.filter(function(e){return e.date===d}).reduce(function(a,e){return a+e.h},0)}).filter(function(v){return v>0});
+  return '<section class="card"><h2>Sleep</h2><p style="font-size:28px;margin:4px 0;font-family:Georgia,serif">'+fh(last.h)+'</p><p class="meta">Latest entry: '+niceDate(last.date)+'</p>'+
+  (per.length?'<p class="meta">7-day average: '+fh(per.reduce(function(a,v){return a+v},0)/per.length)+'</p>':'<p class="meta">No sleep in the last 7 days.</p>')+'</section>'}
+
+var IN_CATS=["Salary","Gift","Other income"],OUT_CATS=["Rent","Food","Transport","Bills","Subscriptions","Leisure","Other"];
+var OUT_COLS=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#8A9AA3"];
+var moneyMonth=todayStr().slice(0,7);
+function fe(n){return (n<0?"-":"")+"€"+Math.abs(n).toLocaleString("en-GB",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function mload(){return load("money")}
+function monthSums(ym){var es=mload().filter(function(e){return e.date.slice(0,7)===ym}),i=0,o=0;
+  es.forEach(function(e){if(e.type==="in")i+=e.amt;else o+=e.amt});return{es:es,inc:i,out:o,left:i-o}}
+function sumTiles(m){return '<div class="sum"><div class="tile"><small>Income</small><strong>'+fe(m.inc)+'</strong></div>'+
+  '<div class="tile"><small>Costs</small><strong>'+fe(m.out)+'</strong></div>'+
+  '<div class="tile left"><small>Left over</small><strong class="'+(m.left<0?"neg":"")+'">'+fe(m.left)+'</strong></div></div>'}
+function shiftMonth(ym,n){var d=new Date(ym+"-01T12:00:00");d.setMonth(d.getMonth()+n);return iso(d).slice(0,7)}
+function occDate(r,k){
+  if(r.rep==="week")return addDays(r.start,7*k);
+  var d=new Date(r.start+"T12:00:00"),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+k);
+  d.setDate(Math.min(day,new Date(d.getFullYear(),d.getMonth()+1,0).getDate()));return iso(d)}
+function applyRules(){
+  var rs=load("mrules");if(!rs.length)return;
+  var es=mload(),t=todayStr(),changed=false;
+  rs.forEach(function(r){var guard=0;
+    while(occDate(r,r.k)<=t&&guard++<600){es.push({id:Date.now()+Math.floor(Math.random()*1e6),date:occDate(r,r.k),type:r.type,amt:r.amt,cat:r.cat,note:r.note,rid:r.id});r.k++;changed=true}});
+  if(changed){save("money",es);save("mrules",rs)}}
+function ruleLabel(r){return (r.rep==="week"?"every week":"every month")+" from "+niceDate(r.start)}
+function moneyPage(){
+  var m=monthSums(moneyMonth),label=new Date(moneyMonth+"-01T12:00:00").toLocaleDateString("en-GB",{month:"long",year:"numeric"});
+  var h='<h1>Money</h1><p class="sub">Add income and costs as they happen. The left-over amount is worked out for you.</p>'+
+  '<form class="form" id="mf"><label>Type<select id="mty"><option value="out">Cost</option><option value="in">Income</option></select></label>'+
+  '<label>Amount (€)<input type="number" id="ma" min="0.01" step="0.01" required style="width:110px"></label>'+
+  '<label>Category<select id="mc"></select></label><label>Date<input type="date" id="md" value="'+todayStr()+'" required></label>'+
+  '<label>Repeat<select id="mrp"><option value="none">Never</option><option value="month">Every month</option><option value="week">Every week</option></select></label>'+
+  '<label class="t">Note (optional)<input id="mn" maxlength="80"></label><button type="submit">Add</button></form>'+
+  '<div class="tools"><h2>'+label+'</h2><button class="alt" data-mm="-1">Previous</button><button class="alt" data-mm="0">This month</button><button class="alt" data-mm="1">Next</button></div>'+sumTiles(m);
+  var cats=OUT_CATS.map(function(c,i){return{label:c,color:OUT_COLS[i],value:m.es.filter(function(e){return e.type==="out"&&e.cat===c}).reduce(function(a,e){return a+e.amt},0)}});
+  h+='<section class="card"><h2>Where the money goes</h2>'+pie(cats,fe)+'</section>';
+  h+=moneyOverCard();var rec=m.es.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id});
+  var rl=load("mrules");
+  h+='<h3>Recurring entries</h3><section class="card">'+(rl.length?'<ul class="tasks">'+rl.map(function(r){
+    return '<li><div class="tt">'+esc(r.cat)+(r.note?" · "+esc(r.note):"")+'<div class="meta">'+ruleLabel(r)+'</div></div><b class="'+(r.type==="out"?"neg":"")+'">'+(r.type==="out"?"-":"+")+fe(r.amt)+'</b><button class="x" data-rdel="'+r.id+'">Stop</button></li>'}).join("")+'</ul>':'<p class="empty">None yet. Choose a Repeat option when adding an entry, for example rent every month.</p>')+'</section>';
+  h+='<h3>Entries this month</h3><section class="card">'+(rec.length?'<ul class="tasks">'+rec.map(function(e){
+    return '<li><div class="tt">'+esc(e.cat)+(e.note?" · "+esc(e.note):"")+'<div class="meta">'+niceDate(e.date)+'</div></div><b class="'+(e.type==="out"?"neg":"")+'">'+(e.type==="out"?"-":"+")+fe(e.amt)+'</b><button class="x" data-mdel="'+e.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No entries this month. Add one above.</p>')+'</section>';
+  return h}
+function bindMoney(){
+  var f=document.getElementById("mf");if(!f)return;
+  var ty=document.getElementById("mty"),c=document.getElementById("mc");
+  function fill(){c.innerHTML=(ty.value==="in"?IN_CATS:OUT_CATS).map(function(x){return '<option>'+x+'</option>'}).join("")}
+  fill();ty.onchange=fill;
+  f.onsubmit=function(e){e.preventDefault();var amt=parseFloat(document.getElementById("ma").value);if(!(amt>0))return;
+    var rep=document.getElementById("mrp").value,date=document.getElementById("md").value,
+    base={type:ty.value,amt:Math.round(amt*100)/100,cat:c.value,note:document.getElementById("mn").value.trim()};
+    if(rep==="none"){var es=mload();es.push(Object.assign({id:Date.now(),date:date},base));if(!save("money",es))return}
+    else{var rs=load("mrules");rs.push(Object.assign({id:Date.now(),start:date,rep:rep,k:0},base));if(!save("mrules",rs))return;applyRules()}
+    moneyMonth=date.slice(0,7);render()};
+  document.querySelectorAll("button[data-rdel]").forEach(function(b){armed(b,function(){save("mrules",load("mrules").filter(function(r){return r.id!=b.dataset.rdel}));render()},"Tap again to stop")});
+  document.querySelectorAll("button[data-mm]").forEach(function(b){b.onclick=function(){var n=+b.dataset.mm;moneyMonth=n===0?todayStr().slice(0,7):shiftMonth(moneyMonth,n);render()}});
+  document.querySelectorAll("button[data-mdel]").forEach(function(b){b.onclick=function(){save("money",mload().filter(function(e){return e.id!=b.dataset.mdel}));render()}})}
+function moneyCard(){
+  var m=monthSums(todayStr().slice(0,7));
+  if(!m.es.length)return '<section class="card"><h2>Money this month</h2><p class="empty">No income or costs yet. <a href="#Money">Add some</a>.</p></section>';
+  return '<section class="card"><h2>Money this month</h2><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><small class="meta">Income</small><div><b>'+fe(m.inc)+'</b></div></div><div><small class="meta">Costs</small><div><b>'+fe(m.out)+'</b></div></div><div><small class="meta">Left over</small><div><b class="'+(m.left<0?"neg":"")+'">'+fe(m.left)+'</b></div></div></div></section>'}
+
+function armed(b,fn,label){var t=b.textContent;b.onclick=function(){if(b.dataset.a){fn();return}b.dataset.a="1";b.textContent=label||"Tap again to confirm";setTimeout(function(){b.dataset.a="";b.textContent=t},4000)}}
+var PFC=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#2E8B57","#A33B6B","#8A9AA3"],pfPie="inv";
+function pfTot(hs){var v=0,p=0;hs.forEach(function(h){v+=h.now;p+=h.paid});return{v:v,p:p,pl:v-p,pct:p?(v-p)/p*100:0}}
+function fpl(n){return (n>0?"+":"")+fe(n)}
+function fpct(n){return (n>0?"+":"")+(Math.round(n*10)/10)+"%"}
+function plCls(n){return n<0?"neg":n>0?"pos":""}
+function snapPf(){var t=pfTot(load("pf")),ss=load("psnap").filter(function(x){return x.date!==todayStr()});ss.push({date:todayStr(),v:t.v,p:t.p});save("psnap",ss)}
+function lineChart(ss){
+  if(!ss.length)return '<p class="empty">Add or update an investment and the graph starts here.</p>';
+  ss=ss.slice().sort(function(a,b){return a.date.localeCompare(b.date)});
+  var vals=[];ss.forEach(function(x){vals.push(x.v);if(typeof x.p==="number")vals.push(x.p)});
+  var lo=Math.min.apply(null,vals),hi=Math.max.apply(null,vals);if(hi===lo){hi+=1;lo=Math.max(0,lo-1)}
+  var pad=(hi-lo)*0.1;hi+=pad;lo=Math.max(0,lo-pad);
+  var t0=new Date(ss[0].date).getTime(),t1=new Date(ss[ss.length-1].date).getTime();
+  function X(d){return ss.length===1?160:44+(new Date(d).getTime()-t0)/((t1-t0)||1)*266}
+  function Y(v){return 118-(v-lo)/(hi-lo)*100}
+  var vp=ss.map(function(x){return X(x.date).toFixed(1)+","+Y(x.v).toFixed(1)}).join(" "),
+  pp=ss.filter(function(x){return typeof x.p==="number"}).map(function(x){return X(x.date).toFixed(1)+","+Y(x.p).toFixed(1)}).join(" ");
+  var svg='<svg viewBox="0 0 320 150" width="100%" role="img" aria-label="Portfolio value over time"><line x1="44" y1="118" x2="316" y2="118" stroke="#D5E0E5"/><line x1="44" y1="18" x2="316" y2="18" stroke="#EAF0F2"/>'+
+  '<text x="2" y="21" font-size="9" fill="#5B6F7A">'+fe(Math.round(hi))+'</text><text x="2" y="121" font-size="9" fill="#5B6F7A">'+fe(Math.round(lo))+'</text>';
+  if(pp&&ss.length>1)svg+='<polyline points="'+pp+'" fill="none" stroke="#8A9AA3" stroke-width="2" stroke-dasharray="5 4"/>';
+  if(ss.length>1)svg+='<polyline points="'+vp+'" fill="none" stroke="#0E7C86" stroke-width="2.5"/>';
+  ss.forEach(function(x){svg+='<circle cx="'+X(x.date).toFixed(1)+'" cy="'+Y(x.v).toFixed(1)+'" r="3.5" fill="#0E7C86"/>'});
+  svg+='<text x="44" y="136" font-size="9" fill="#5B6F7A">'+niceDate(ss[0].date)+'</text>'+(ss.length>1?'<text x="316" y="136" font-size="9" text-anchor="end" fill="#5B6F7A">'+niceDate(ss[ss.length-1].date)+'</text>':'')+'</svg>';
+  return svg+'<p class="meta"><span class="sw" style="background:#0E7C86;display:inline-block"></span> Value &nbsp; <span class="sw" style="background:#8A9AA3;display:inline-block"></span> Paid in. Latest: '+fe(ss[ss.length-1].v)+(ss.length===1?'. Update your values on other days to see the line.':'')+'</p>'}
+function portfolioPage(){
+  var hs=load("pf"),t=pfTot(hs);
+  var h='<h1>Portfolio</h1><p class="sub">Type in what you hold in Trade Republic and Smartbroker+. Update "Worth now" whenever you like.</p>'+
+  '<form class="form" id="pff"><label>App<select id="pa"><option>Trade Republic</option><option>Smartbroker+</option></select></label>'+
+  '<label class="t">Name<input id="pn" required maxlength="60" placeholder="e.g. MSCI World ETF"></label>'+
+  '<label>Quantity<input type="number" id="pq" min="0" step="any" required style="width:90px"></label>'+
+  '<label>Paid in total (€)<input type="number" id="pp" min="0" step="0.01" required style="width:120px"></label>'+
+  '<label>Worth now (€)<input type="number" id="pw" min="0" step="0.01" required style="width:120px"></label><button type="submit">Add</button></form>'+
+  '<div class="sum"><div class="tile"><small>Total value</small><strong>'+fe(t.v)+'</strong></div><div class="tile"><small>Total paid</small><strong>'+fe(t.p)+'</strong></div>'+
+  '<div class="tile left"><small>Profit / loss</small><strong class="'+plCls(t.pl)+'">'+fpl(t.pl)+'</strong><small>'+fpct(t.pct)+'</small></div></div>';
+  var rows=hs.map(function(x){var pl=x.now-x.paid;
+    return '<tr><td>'+esc(x.name)+'<div class="meta">'+esc(x.app)+'</div></td><td class="n">'+x.qty+'</td><td class="n">'+fe(x.paid)+'</td><td class="n"><input type="number" step="0.01" min="0" value="'+x.now+'" data-pnow="'+x.id+'" aria-label="Worth now for '+esc(x.name)+'"></td><td class="n '+plCls(pl)+'">'+fpl(pl)+'<div class="meta">'+fpct(x.paid?pl/x.paid*100:0)+'</div></td><td><button class="x" data-pdel="'+x.id+'">Delete</button></td></tr>'}).join("");
+  var items,tot={};
+  if(pfPie==="app"){["Trade Republic","Smartbroker+"].forEach(function(a,i){tot[a]=hs.filter(function(x){return x.app===a}).reduce(function(s,x){return s+x.now},0)});
+    items=Object.keys(tot).map(function(k,i){return{label:k,color:PFC[i],value:tot[k]}})}
+  else items=hs.map(function(x,i){return{label:x.name,color:PFC[i%PFC.length],value:x.now}});
+  h+='<div class="pf"><section class="card"><h2>Your investments</h2>'+(hs.length?'<div class="tw"><table><thead><tr><th>Investment</th><th class="n">Qty</th><th class="n">Paid</th><th class="n">Worth now</th><th class="n">Profit / loss</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>':'<p class="empty">No investments yet. Add your first one above.</p>')+'</section>'+
+  '<section class="card"><h2>Split</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(pfPie==="inv"?" sel":"")+'" data-pp="inv">By investment</button><button class="alt'+(pfPie==="app"?" sel":"")+'" data-pp="app">By app</button></div>'+pie(items,fe)+'</section></div>'+
+  '<section class="card"><h2>Value over time</h2>'+lineChart(load("psnap"))+'</section>';
+  return h}
+function bindPf(){
+  var f=document.getElementById("pff");if(!f)return;
+  f.onsubmit=function(e){e.preventDefault();var hs=load("pf");
+    hs.push({id:Date.now(),app:document.getElementById("pa").value,name:document.getElementById("pn").value.trim(),qty:parseFloat(document.getElementById("pq").value),paid:parseFloat(document.getElementById("pp").value),now:parseFloat(document.getElementById("pw").value)});
+    if(save("pf",hs)){snapPf();render()}};
+  document.querySelectorAll("input[data-pnow]").forEach(function(i){i.onchange=function(){var v=parseFloat(i.value);if(!(v>=0))return;
+    var hs=load("pf");hs.forEach(function(x){if(x.id==i.dataset.pnow)x.now=v});save("pf",hs);snapPf();render()}});
+  document.querySelectorAll("button[data-pdel]").forEach(function(b){armed(b,function(){save("pf",load("pf").filter(function(x){return x.id!=b.dataset.pdel}));snapPf();render()},"Tap again")});
+  document.querySelectorAll("button[data-pp]").forEach(function(b){b.onclick=function(){pfPie=b.dataset.pp;render()}})}
+function pfCard(){
+  var hs=load("pf");if(!hs.length)return '<section class="card"><h2>Portfolio</h2><p class="empty">No investments added yet. <a href="#Portfolio">Add some</a>.</p></section>';
+  var t=pfTot(hs);
+  return '<section class="card"><h2>Portfolio</h2><p style="font:600 26px Georgia,serif;margin:4px 0">'+fe(t.v)+'</p><p class="meta">Profit / loss: <b class="'+plCls(t.pl)+'">'+fpl(t.pl)+' ('+fpct(t.pct)+')</b></p></section>'}
+
+function barChart(groups,series,mode,fmt){
+  var W=320,H=165,L=40,B=24,T=10,pw=W-L-6,ph=H-B-T,n=groups.length;
+  var mx=0;groups.forEach(function(g){var v=mode==="stack"?g.values.reduce(function(a,b){return a+b},0):Math.max.apply(null,g.values);if(v>mx)mx=v});
+  if(!mx)return '<p class="empty">Nothing to show yet. Add some entries first.</p>';
+  var gw=pw/n,svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Bar chart"><line x1="'+L+'" y1="'+(T+ph)+'" x2="'+(W-4)+'" y2="'+(T+ph)+'" stroke="#D5E0E5"/>'+
+  '<text x="2" y="'+(T+8)+'" font-size="9" fill="#5B6F7A">'+fmt(mx)+'</text><text x="2" y="'+(T+ph)+'" font-size="9" fill="#5B6F7A">0</text>';
+  groups.forEach(function(g,i){var x0=L+i*gw+gw*0.15,bw=gw*0.7;
+    if(mode==="stack"){var y=T+ph;g.values.forEach(function(v,k){if(v<=0)return;var hh=v/mx*ph;y-=hh;svg+='<rect x="'+x0.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+series[k].color+'"><title>'+esc(series[k].label)+': '+fmt(v)+'</title></rect>'})}
+    else{var sw=bw/g.values.length;g.values.forEach(function(v,k){var hh=v/mx*ph;svg+='<rect x="'+(x0+k*sw).toFixed(1)+'" y="'+(T+ph-hh).toFixed(1)+'" width="'+(sw-1).toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+series[k].color+'"><title>'+esc(series[k].label)+': '+fmt(v)+'</title></rect>'})}
+    svg+='<text x="'+(L+i*gw+gw/2).toFixed(1)+'" y="'+(H-8)+'" font-size="8.5" text-anchor="middle" fill="#5B6F7A">'+esc(g.label)+'</text>'});
+  return svg+'</svg><ul class="leg" style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px">'+series.map(function(x){return '<li><span class="sw" style="background:'+x.color+'"></span>'+esc(x.label)+'</li>'}).join("")+'</ul>'}
+var timeGran="week",timeNoSleep=false;
+function timeOverCard(){
+  var es=tload(),groups=[],cats=CATS.map(function(c,i){return{label:c,color:COLS[i]}}).filter(function(c){return!(timeNoSleep&&c.label==="Sleep")});
+  function vals(f){return cats.map(function(c){return es.filter(function(e){return e.cat===c.label&&f(e)}).reduce(function(a,e){return a+e.h},0)})}
+  if(timeGran==="week"){var ws=weekStart(todayStr());for(var i=7;i>=0;i--){(function(w){groups.push({label:new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}),values:vals(function(e){return weekStart(e.date)===w})})})(addDays(ws,-7*i))}}
+  else{for(var j=5;j>=0;j--){(function(ym){groups.push({label:new Date(ym+"-01T12:00:00").toLocaleDateString("en-GB",{month:"short",year:"2-digit"}),values:vals(function(e){return e.date.slice(0,7)===ym})})})(shiftMonth(todayStr().slice(0,7),-j))}}
+  return '<section class="card" style="margin-top:16px"><h2>Hours over time</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(timeGran==="week"?" sel":"")+'" data-tg="week">By week</button><button class="alt'+(timeGran==="month"?" sel":"")+'" data-tg="month">By month</button><button class="alt'+(timeNoSleep?" sel":"")+'" data-ns="1">Without sleep</button></div>'+barChart(groups,cats,"stack",fh)+'</section>'}
+function applyTimeRules(){
+  var rs=load("trules");if(!rs.length)return;
+  var es=tload(),t=todayStr(),ch=false;
+  rs.forEach(function(r){var g=0;while(occDate(r,r.k)<=t&&g++<600){es.push({id:Date.now()+Math.floor(Math.random()*1e6),date:occDate(r,r.k),cat:r.cat,h:r.h,rid:r.id});r.k++;ch=true}});
+  if(ch){save("time",es);save("trules",rs)}}
+function timeRulesCard(){
+  var rl=load("trules");
+  return '<h3>Repeating entries</h3><section class="card">'+(rl.length?'<ul class="tasks">'+rl.map(function(r){
+    return '<li><div class="tt">'+esc(r.cat)+'<div class="meta">'+(r.rep==="week"?"every week":"every month")+' from '+niceDate(r.start)+'</div></div><b>'+fh(r.h)+'</b><button class="x" data-trdel="'+r.id+'">Stop</button></li>'}).join("")+'</ul><p class="meta">These hours are added automatically on their dates. If you skip a session, delete that entry so your totals stay true.</p>':'<p class="empty">None yet. Choose a Repeat option when adding hours, for example martial arts every week.</p>')+'</section>'}
+function goalsLoad(){var g=load("goals");return Array.isArray(g)?{}:g}
+function goalsCard(){
+  var g=goalsLoad();
+  return '<section class="card"><h2>Daily goals</h2><p class="meta">Hours per day you want to reach, at least. Leave a box empty for no goal.</p><div class="form">'+
+  CATS.map(function(c,i){return '<label>'+esc(c)+'<input type="number" id="g'+i+'" min="0" max="24" step="0.25" style="width:90px" value="'+(g[c]!=null?g[c]:"")+'"></label>'}).join("")+
+  '</div><button id="gsave">Save goals</button><p class="saved" id="gmsg"></p></section><div style="height:16px"></div>'}
+function bindGoals(){
+  var b=document.getElementById("gsave");if(!b)return;
+  b.onclick=function(){var g={};CATS.forEach(function(c,i){var v=parseFloat(document.getElementById("g"+i).value);if(v>0)g[c]=v});
+    document.getElementById("gmsg").textContent=save("goals",g)?"Saved":""}}
+function goalsProgress(){
+  var g=goalsLoad(),cs=CATS.filter(function(c){return g[c]>0});if(!cs.length)return "";
+  var es=tload(),days=lastDays(7),td=todayStr();
+  var rows=cs.map(function(c){
+    var per=days.map(function(d){return es.filter(function(e){return e.cat===c&&e.date===d}).reduce(function(a,e){return a+e.h},0)}),
+    today=per[6],avg=per.reduce(function(a,v){return a+v},0)/7,hit=per.filter(function(v){return v>=g[c]}).length,pct=Math.min(100,today/g[c]*100);
+    return '<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span>'+esc(c)+'</span><span class="meta">today '+fh(today)+' of '+fh(g[c])+' · 7-day average '+fh(avg)+' · reached '+hit+' of 7 days</span></div>'+
+    '<div style="background:#E8EDEF;border-radius:6px;height:10px;margin-top:4px"><div style="width:'+pct+'%;background:'+(today>=g[c]?"#2E8B57":"#0E7C86")+';height:10px;border-radius:6px"></div></div></div>'}).join("");
+  return '<section class="card"><h2>Goals</h2>'+rows+'</section>'}
+function goalsBlock(){var g=goalsProgress();return g?'<div style="margin-bottom:16px">'+g+'</div>':""}
+function bindTimeGraph(){
+  document.querySelectorAll("button[data-trdel]").forEach(function(b){armed(b,function(){save("trules",load("trules").filter(function(r){return r.id!=b.dataset.trdel}));render()},"Tap again to stop")});
+  document.querySelectorAll("button[data-tg]").forEach(function(b){b.onclick=function(){timeGran=b.dataset.tg;render()}});
+  document.querySelectorAll("button[data-ns]").forEach(function(b){b.onclick=function(){timeNoSleep=!timeNoSleep;render()}})}
+function moneyOverCard(){
+  var cur=todayStr().slice(0,7),groups=[],lefts=[];
+  for(var i=5;i>=0;i--){var ym=shiftMonth(cur,-i),m=monthSums(ym),lab=new Date(ym+"-01T12:00:00").toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
+    groups.push({label:lab,values:[m.inc,m.out]});lefts.push([lab,m.left])}
+  return '<section class="card" style="margin-top:16px"><h2>Month by month</h2>'+barChart(groups,[{label:"Income",color:"#2E8B57"},{label:"Costs",color:"#B5532A"}],"group",fe)+
+  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-top:8px">'+lefts.map(function(l){return '<div class="meta">'+l[0]+'<br><b class="'+(l[1]<0?"neg":"")+'">Left: '+fe(l[1])+'</b></div>'}).join("")+'</div></section>'}
+
+function today(){
+  var d=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+  var cards=[["Portfolio","No investments added yet."],["Appointments","Nothing coming up."],
+  ["Time logged today","No hours logged yet."],["Sleep","No sleep logged yet."],["Money this month","No income or costs yet."]];
+  var h='<h1>Today</h1><p class="sub">'+d+'</p>'+backupLine()+'<div class="grid">';
+  h+='<section class="card note"><h2>Reminder</h2><textarea id="note" aria-label="Reminder note"></textarea><p class="saved" id="saved"></p></section>';
+  cards.forEach(function(c,i){if(i===1)h+=todoCard();if(c[0]==="Portfolio"){h+=pfCard();return}if(c[0]==="Appointments"){h+=apptCard();return}if(c[0]==="Time logged today"){h+=timeCard()+goalsProgress();return}if(c[0]==="Sleep"){h+=sleepCard();return}if(c[0]==="Money this month"){h+=moneyCard();return}h+='<section class="card"><h2>'+c[0]+'</h2><p class="empty">'+c[1]+'</p></section>'});
+  return h+'</div>';
+}
+function later(p){return '<h1>'+p+'</h1><p class="sub">Not built yet.</p><section class="card later"><p class="empty">'+LATER[p]+'</p></section>'}
+
+function render(){
+  var p=decodeURIComponent(location.hash.slice(1));
+  if(PAGES.indexOf(p)<0)p="Today";
+  document.getElementById("nav").innerHTML=PAGES.map(function(n){
+    return '<a href="#'+n+'"'+(n===p?' class="on" aria-current="page"':'')+'>'+n+'</a>'}).join("");
+  document.getElementById("page").innerHTML=p==="Today"?today():p==="Tasks"?tasksPage():p==="Calendar"?calPage():p==="Settings"?settingsPage():p==="Time"?timePage():p==="Money"?moneyPage():p==="Portfolio"?portfolioPage():later(p);bindTasks();bindCal();bindSettings();bindTime();bindTimeGraph();bindGoals();bindMoney();bindPf();
+  document.title=p+" - My Dashboard";
+  if(p==="Today"){
+    var t=document.getElementById("note");t.value=getNote();
+    t.addEventListener("input",function(){
+      document.getElementById("saved").textContent=saveNote(t.value)?"Saved":"Could not save. Open this file in Chrome or Edge."});
+  }
+}
+window.addEventListener("hashchange",render);applyRules();applyTimeRules();render();
+</script>
+</body>
+</html>
