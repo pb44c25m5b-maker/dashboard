@@ -275,7 +275,7 @@ function timePage(){
   goalsBlock()+'<div class="two"><section class="card"><h2>Hours per day</h2><div class="chart">'+days.map(function(d,i){
     return '<div class="col'+(d===td?" now":"")+'" title="'+d+': '+fh(tot[i])+'">'+(tot[i]?fh(tot[i]).replace(" h",""):"")+'<i style="height:'+Math.round(tot[i]/mx*100)+'%"></i><span>'+parseInt(d.slice(8))+'</span></div>'}).join("")+'</div><p class="meta">Last 14 days, all activities together.</p></section>'+
   '<section class="card"><h2>Where the time goes</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(timeRange===7?" sel":"")+'" data-tr="7">Last 7 days</button><button class="alt'+(timeRange===30?" sel":"")+'" data-tr="30">Last 30 days</button></div>'+pie(catTotals(inR))+'</section></div>';
-  h+=timeOverCard();var rec=es.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id}).slice(0,15);
+  h+=timeDayCard();h+=timeOverCard();var rec=es.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id}).slice(0,15);
   h+='<h3>Recent entries</h3><section class="card">'+(rec.length?'<ul class="tasks">'+rec.map(function(e){
     return '<li><div class="tt">'+esc(e.cat)+'<div class="meta">'+niceDate(e.date)+'</div></div><b>'+fh(e.h)+'</b><button class="x" data-tdel="'+e.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No hours logged yet. Add your first entry above.</p>')+'</section>';h+=timeRulesCard();
   return h}
@@ -477,7 +477,24 @@ function goalsProgress(){
     '<div style="background:#E8EDEF;border-radius:6px;height:10px;margin-top:4px"><div style="width:'+pct+'%;background:'+(today>=g[c]?"#2E8B57":"#0E7C86")+';height:10px;border-radius:6px"></div></div></div>'}).join("");
   return '<section class="card"><h2>Goals</h2>'+rows+'</section>'}
 function goalsBlock(){var g=goalsProgress();return g?'<div style="margin-bottom:16px">'+g+'</div>':""}
+var dayRange=7,dayCat="all",dayNoSleep=false;
+function timeDayCard(){
+  var es=tload(),cs=dayCat==="all"?CATS.filter(function(c){return!(dayNoSleep&&c==="Sleep")}):[dayCat];
+  if(dayCat!=="all"&&CATS.indexOf(dayCat)<0){dayCat="all";cs=CATS}
+  var series=cs.map(function(c){return{label:c,color:COLS[CATS.indexOf(c)]}});
+  var groups=lastDays(dayRange).map(function(d){
+    var dt=new Date(d+"T12:00:00");
+    return{label:dayRange<=7?dt.toLocaleDateString("en-GB",{weekday:"short"})+" "+dt.getDate():String(dt.getDate()),
+      values:cs.map(function(c){return es.filter(function(e){return e.date===d&&e.cat===c}).reduce(function(a,e){return a+e.h},0)})}});
+  return '<section class="card" style="margin-top:16px"><h2>Daily overview</h2><div class="tools" style="margin:0 0 8px;flex-wrap:wrap">'+
+  '<button class="alt'+(dayRange===7?" sel":"")+'" data-dr="7">7 days</button><button class="alt'+(dayRange===14?" sel":"")+'" data-dr="14">14 days</button>'+
+  (dayCat==="all"?'<button class="alt'+(dayNoSleep?" sel":"")+'" data-dn="1">Without sleep</button>':'')+
+  '<select id="dcat" aria-label="Activity" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px"><option value="all">All activities</option>'+
+  CATS.map(function(c){return '<option'+(c===dayCat?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select></div>'+barChart(groups,series,"stack",fh)+'</section>'}
 function bindTimeGraph(){
+  document.querySelectorAll("button[data-dr]").forEach(function(b){b.onclick=function(){dayRange=+b.dataset.dr;render()}});
+  document.querySelectorAll("button[data-dn]").forEach(function(b){b.onclick=function(){dayNoSleep=!dayNoSleep;render()}});
+  var dc=document.getElementById("dcat");if(dc)dc.onchange=function(){dayCat=dc.value;render()};
   document.querySelectorAll("button[data-trdel]").forEach(function(b){armed(b,function(){save("trules",load("trules").filter(function(r){return r.id!=b.dataset.trdel}));render()},"Tap again to stop")});
   document.querySelectorAll("button[data-tg]").forEach(function(b){b.onclick=function(){timeGran=b.dataset.tg;render()}});
   document.querySelectorAll("button[data-ns]").forEach(function(b){b.onclick=function(){timeNoSleep=!timeNoSleep;render()}})}
