@@ -215,7 +215,7 @@ function backupLine(){var b=lastBackup();
 function settingsPage(){
   var b=lastBackup();
   var h='<h1>Settings</h1><p class="sub">Backups protect your data if Safari is cleared or you change phone.</p>'+
-  goalsCard()+'<section class="card"><h2>Back up</h2><p class="meta">Last backup: '+(b?b.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"never")+'. Aim for once a month.</p>'+
+  goalsCard()+customCard()+'<section class="card"><h2>Back up</h2><p class="meta">Last backup: '+(b?b.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"}):"never")+'. Aim for once a month.</p>'+
   '<div class="bk">'+(DL?'<button id="bsave">Save backup file</button>':'')+'<button class="alt" id="bshow">Show backup as text</button></div>'+
   '<div id="btext"></div><p class="meta">The file or text contains everything you entered. Keep it somewhere you trust, like your Files app or a note.</p></section>'+
   '<h3>Restore</h3><section class="card"><h2>Restore from a backup</h2><p class="meta">This replaces everything currently in the dashboard.</p>'+
@@ -244,6 +244,11 @@ function bindSettings(){
 var CATS=["Anki","Studying (no electronics)","Martial arts","Work","Eating","Sleep","Other"];
 var COLS=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#8A9AA3"];
 var timeRange=7;
+var BASE_CATS=CATS.slice(),BASE_COLS=COLS.slice(),EXTRA=["#2E8B57","#A33B6B","#6B8E23","#D2691E","#20B2AA","#9370DB"];
+function refreshCats(){
+  var seen={},custom=[];BASE_CATS.forEach(function(c){seen[c]=1});
+  load("ccats").concat(tload().map(function(e){return e.cat})).forEach(function(c){if(c&&!seen[c]){seen[c]=1;custom.push(c)}});
+  CATS=BASE_CATS.concat(custom);COLS=BASE_COLS.concat(custom.map(function(x,i){return EXTRA[i%EXTRA.length]}))}
 function fh(n){return (Math.round(n*100)/100)+" h"}
 function tload(){return load("time")}
 function catTotals(entries){return CATS.map(function(c,i){return{label:c,color:COLS[i],value:entries.filter(function(e){return e.cat===c}).reduce(function(a,e){return a+e.h},0)}})}
@@ -264,7 +269,7 @@ function timePage(){
   var mx=Math.max.apply(null,tot.concat([1])),td=todayStr();
   var range=lastDays(timeRange),inR=es.filter(function(e){return range.indexOf(e.date)>=0});
   var h='<h1>Time</h1><p class="sub">Add each activity as you finish it. Totals and graphs update on their own.</p>'+
-  '<form class="form" id="tmf"><label>Activity<select id="tc">'+CATS.map(function(c){return '<option>'+c+'</option>'}).join("")+'</select></label>'+
+  '<form class="form" id="tmf"><label>Activity<select id="tc">'+CATS.map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'<option value="__new">+ New activity...</option></select></label>'+'<label id="tnl2" hidden>New activity name<input id="tnn" maxlength="30"></label>'+
   '<label>Hours<input type="number" id="th" min="0.05" max="24" step="0.05" required style="width:90px" placeholder="1.5"></label>'+
   '<label>Date<input type="date" id="tdt" value="'+td+'" required></label><label>Repeat<select id="trp"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label><button type="submit">Add</button></form>'+
   goalsBlock()+'<div class="two"><section class="card"><h2>Hours per day</h2><div class="chart">'+days.map(function(d,i){
@@ -275,10 +280,13 @@ function timePage(){
     return '<li><div class="tt">'+esc(e.cat)+'<div class="meta">'+niceDate(e.date)+'</div></div><b>'+fh(e.h)+'</b><button class="x" data-tdel="'+e.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No hours logged yet. Add your first entry above.</p>')+'</section>';h+=timeRulesCard();
   return h}
 function bindTime(){
-  var f=document.getElementById("tmf");if(!f)return;
+  var f=document.getElementById("tmf");if(!f)return;var tcs=document.getElementById("tc");tcs.onchange=function(){document.getElementById("tnl2").hidden=tcs.value!=="__new"};
   f.onsubmit=function(e){e.preventDefault();var hh=parseFloat(document.getElementById("th").value);
     if(!(hh>0&&hh<=24))return;
     var rep=document.getElementById("trp").value,date=document.getElementById("tdt").value,cat=document.getElementById("tc").value;
+    if(cat==="__new"){cat=document.getElementById("tnn").value.trim();if(!cat){document.getElementById("tnn").focus();return}
+      var hit=CATS.filter(function(x){return x.toLowerCase()===cat.toLowerCase()})[0];
+      if(hit)cat=hit;else{var cc=load("ccats");cc.push(cat);save("ccats",cc);refreshCats()}}
     if(rep==="none"){var es=tload();es.push({id:Date.now(),date:date,cat:cat,h:hh});if(!save("time",es))return}
     else{var rs=load("trules");rs.push({id:Date.now(),start:date,rep:rep,k:0,cat:cat,h:hh});if(!save("trules",rs))return;applyTimeRules()}
     render()};
@@ -447,7 +455,15 @@ function goalsCard(){
   return '<section class="card"><h2>Daily goals</h2><p class="meta">Hours per day you want to reach, at least. Leave a box empty for no goal.</p><div class="form">'+
   CATS.map(function(c,i){return '<label>'+esc(c)+'<input type="number" id="g'+i+'" min="0" max="24" step="0.25" style="width:90px" value="'+(g[c]!=null?g[c]:"")+'"></label>'}).join("")+
   '</div><button id="gsave">Save goals</button><p class="saved" id="gmsg"></p></section><div style="height:16px"></div>'}
+function customCard(){
+  var cu=CATS.slice(BASE_CATS.length);
+  return '<section class="card"><h2>Your own activities</h2><p class="meta">Add new ones on the Time page: choose "+ New activity..." in the Activity box. The standard seven always stay.</p>'+
+  (cu.length?'<ul class="tasks">'+cu.map(function(c,i){return '<li><div class="tt">'+esc(c)+'</div><button class="x" data-ccdel="'+i+'">Remove</button></li>'}).join("")+'</ul>':'<p class="empty">None yet.</p>')+'<p class="saved" id="ccmsg"></p></section><div style="height:16px"></div>'}
 function bindGoals(){
+  document.querySelectorAll("button[data-ccdel]").forEach(function(b){b.onclick=function(){
+    var name=CATS.slice(BASE_CATS.length)[+b.dataset.ccdel];
+    if(tload().some(function(e){return e.cat===name})){document.getElementById("ccmsg").textContent="This activity still has entries. Delete those on the Time page first.";return}
+    save("ccats",load("ccats").filter(function(c){return c!==name}));render()}});
   var b=document.getElementById("gsave");if(!b)return;
   b.onclick=function(){var g={};CATS.forEach(function(c,i){var v=parseFloat(document.getElementById("g"+i).value);if(v>0)g[c]=v});
     document.getElementById("gmsg").textContent=save("goals",g)?"Saved":""}}
@@ -483,7 +499,7 @@ function today(){
 }
 function later(p){return '<h1>'+p+'</h1><p class="sub">Not built yet.</p><section class="card later"><p class="empty">'+LATER[p]+'</p></section>'}
 
-function render(){
+function render(){refreshCats();
   var p=decodeURIComponent(location.hash.slice(1));
   if(PAGES.indexOf(p)<0)p="Today";
   document.getElementById("nav").innerHTML=PAGES.map(function(n){
