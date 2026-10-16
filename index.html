@@ -107,7 +107,7 @@ function todayStr(){return iso(new Date())}
 function addDays(s,n){var d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)}
 function addMonth(s){var d=new Date(s+"T12:00:00"),day=d.getDate();d.setDate(1);d.setMonth(d.getMonth()+1);var m=d.getMonth();d.setDate(day);if(d.getMonth()!==m)d.setDate(0);return iso(d)}
 var RANK={High:0,Medium:1,Low:2};
-function sortTasks(a,b){return (a.due||"9999").localeCompare(b.due||"9999")||RANK[a.prio]-RANK[b.prio]}
+function sortTasks(a,b){return RANK[a.prio]-RANK[b.prio]||(a.due||"9999").localeCompare(b.due||"9999")}
 function repLabel(t){return t.rep==="week"?"repeats weekly":t.rep==="month"?"repeats monthly":t.rep==="after"?"repeats "+t.n+" days after done":""}
 function niceDate(s){return s?new Date(s+"T12:00:00").toLocaleDateString("en-GB",{weekday:"short",day:"numeric",month:"short"}):"No deadline"}
 function taskRow(t,full){
@@ -124,7 +124,7 @@ function toggle(id){
   save("tasks",ts);render()}
 function tasksPage(){
   var ts=load("tasks"),open=ts.filter(function(t){return!t.done}).sort(sortTasks),done=ts.filter(function(t){return t.done});
-  var h='<h1>Tasks</h1><p class="sub">Tick a task to finish it. Repeating tasks create their next copy automatically.</p>'+
+  var h='<h1>Tasks</h1><p class="sub">Highest priority first, then by deadline. Tick a task to finish it. Repeating tasks create their next copy automatically.</p>'+
   '<form class="form" id="tf"><label class="t">Task<input id="tt" required maxlength="120"></label>'+
   '<label>Deadline<input type="date" id="td"></label>'+
   '<label>Priority<select id="tp"><option>High</option><option selected>Medium</option><option>Low</option></select></label>'+
