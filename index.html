@@ -79,6 +79,32 @@ td input{width:96px;font:inherit;padding:5px;border:1px solid var(--line);border
 .pos{color:#1B7A3E}
 .rd{font-size:10px;font-weight:600;background:#7FB3A0;color:#fff;border-radius:3px;padding:0 4px;margin-bottom:2px}
 h3{font-size:15px;color:var(--muted);margin:22px 0 6px}
+
+/* phone fixes */
+body{overflow-x:hidden}
+.grid{grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
+.two{grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr))}
+.tools{flex-wrap:wrap}
+.form label{min-width:0}
+.form input,.form select{min-width:0;max-width:100%}
+@media(max-width:600px){
+  main{padding:20px 14px 50px}
+  .bar{gap:12px;padding:0 14px}
+  nav a{padding:16px 10px}
+  h1{font-size:26px}
+  .tools h2{flex:1 1 100%}
+  .tools button{flex:1 1 auto;padding:9px 10px}
+  .form{gap:8px}
+  .form label{flex:1 1 130px}
+  .form .t{flex:1 1 100%}
+  .form button[type=submit]{flex:1 1 100%}
+  .form input,.form select{width:100%!important}
+  .sum{gap:8px}
+  .tile{padding:10px}
+  .tile strong{font-size:17px;overflow-wrap:anywhere}
+  .tile small{font-size:12px}
+  .card{padding:14px}
+}
 </style>
 </head>
 <body>
