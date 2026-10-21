@@ -105,6 +105,18 @@ body{overflow-x:hidden}
   .tile small{font-size:12px}
   .card{padding:14px}
 }
+
+.seg{display:flex;gap:8px}
+@media(max-width:600px){
+  .tools .seg{flex:1 1 100%}
+  .tools .seg button{flex:1}
+  .cal{overflow-x:visible}
+  .cg{grid-template-columns:repeat(7,minmax(0,1fr));min-width:0}
+  .ch{padding:4px 2px;font-size:11px;text-align:center}
+  .cd{min-height:64px;padding:2px;font-size:11px;min-width:0}
+  .cd b{font-size:12px;text-align:center}
+  .ev,.tk{font-size:10px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
 </style>
 </head>
 <body>
@@ -200,14 +212,14 @@ function calPage(){
   '<label>Start<input type="time" id="as"></label><label>End<input type="time" id="ae"></label>'+
   '<label>Repeat<select id="ar"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label>'+
   '<button type="submit">Add appointment</button></form>'+
-  '<div class="tools"><h2>'+title+'</h2><button class="alt'+(calView==="week"?" sel":"")+'" data-v="week">Week</button><button class="alt'+(calView==="month"?" sel":"")+'" data-v="month">Month</button>'+
-  '<button class="alt" data-n="-1" aria-label="Previous">Previous</button><button class="alt" data-n="0">Today</button><button class="alt" data-n="1" aria-label="Next">Next</button></div>'+
+  '<div class="tools"><h2>'+title+'</h2><div class="seg"><button class="alt'+(calView==="week"?" sel":"")+'" data-v="week">Week</button><button class="alt'+(calView==="month"?" sel":"")+'" data-v="month">Month</button></div>'+
+  '<div class="seg"><button class="alt" data-n="-1" aria-label="Previous">Previous</button><button class="alt" data-n="0">Today</button><button class="alt" data-n="1" aria-label="Next">Next</button></div></div>'+
   '<div class="cal"><div class="cg">'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(function(n){return '<div class="ch">'+n+'</div>'}).join("");
   days.forEach(function(x){
     var out=calView==="month"&&new Date(x+"T12:00:00").getMonth()!==mon;
     h+='<div class="cd'+(out?" out":"")+(x===td?" now":"")+'"><b>'+parseInt(x.slice(8))+'</b>'+
-    apptsOn(x).map(function(a){return '<div class="ev">'+esc(apptLabel(a))+'</div>'}).join("")+
-    tasksOn(x).map(function(t){return '<div class="tk'+(x<td?" od":"")+'">Task: '+esc(t.title)+'</div>'}).join("")+'</div>'});
+    apptsOn(x).map(function(a){return '<div class="ev" title="'+esc(apptLabel(a))+'">'+esc(apptLabel(a))+'</div>'}).join("")+
+    tasksOn(x).map(function(t){return '<div class="tk'+(x<td?" od":"")+'" title="'+esc(t.title)+'">Task: '+esc(t.title)+'</div>'}).join("")+'</div>'});
   h+='</div></div><p class="legend">Blue: appointments. Yellow: tasks due that day (red if overdue). Tick tasks on the Tasks page.</p>';
   var all=loadA().sort(function(a,b){return a.date.localeCompare(b.date)});
   h+='<h3>All appointments</h3><section class="card">'+(all.length?'<ul class="tasks">'+all.map(function(a){
