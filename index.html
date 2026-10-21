@@ -132,6 +132,25 @@ ul.tasks li>.pill{white-space:nowrap}
   .cd b{margin-bottom:1px}
   .cd{overflow:hidden}
 }
+
+/* calendar button row: cannot overflow */
+.tools{max-width:100%}
+.tools>*{min-width:0}
+@media(max-width:900px){
+  .tools .seg{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:8px;flex:1 1 100%;width:100%;max-width:100%}
+  .tools .seg button{width:100%;min-width:0;padding:9px 4px;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tools h2{flex:1 1 100%}
+}
+
+/* money tiles: cannot overflow */
+.sum{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tile{min-width:0}
+.tile strong{display:block;overflow-wrap:anywhere}
+.card b,.card small{overflow-wrap:anywhere}
+@media(max-width:600px){
+  .tile strong{font-size:15px}
+  .tile{padding:10px 8px}
+}
 </style>
 </head>
 <body>
@@ -228,7 +247,7 @@ function calPage(){
   '<label>Repeat<select id="ar"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label>'+
   '<button type="submit">Add appointment</button></form>'+
   '<div class="tools"><h2>'+title+'</h2><div class="seg"><button class="alt'+(calView==="week"?" sel":"")+'" data-v="week">Week</button><button class="alt'+(calView==="month"?" sel":"")+'" data-v="month">Month</button></div>'+
-  '<div class="seg"><button class="alt" data-n="-1" aria-label="Previous">Previous</button><button class="alt" data-n="0">Today</button><button class="alt" data-n="1" aria-label="Next">Next</button></div></div>'+
+  '<div class="seg"><button class="alt" data-n="-1" aria-label="Previous">&lsaquo; Prev</button><button class="alt" data-n="0">Today</button><button class="alt" data-n="1" aria-label="Next">Next &rsaquo;</button></div></div>'+
   '<div class="cal"><div class="cg">'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(function(n){return '<div class="ch">'+n+'</div>'}).join("");
   days.forEach(function(x){
     var out=calView==="month"&&new Date(x+"T12:00:00").getMonth()!==mon;
@@ -417,7 +436,7 @@ function bindMoney(){
 function moneyCard(){
   var m=monthSums(todayStr().slice(0,7));
   if(!m.es.length)return '<section class="card"><h2>Money this month</h2><p class="empty">No income or costs yet. <a href="#Money">Add some</a>.</p></section>';
-  return '<section class="card"><h2>Money this month</h2><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div><small class="meta">Income</small><div><b>'+fe(m.inc)+'</b></div></div><div><small class="meta">Costs</small><div><b>'+fe(m.out)+'</b></div></div><div><small class="meta">Left over</small><div><b class="'+(m.left<0?"neg":"")+'">'+fe(m.left)+'</b></div></div></div></section>'}
+  return '<section class="card"><h2>Money this month</h2><div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px"><div><small class="meta">Income</small><div><b>'+fe(m.inc)+'</b></div></div><div><small class="meta">Costs</small><div><b>'+fe(m.out)+'</b></div></div><div><small class="meta">Left over</small><div><b class="'+(m.left<0?"neg":"")+'">'+fe(m.left)+'</b></div></div></div></section>'}
 
 function armed(b,fn,label){var t=b.textContent;b.onclick=function(){if(b.dataset.a){fn();return}b.dataset.a="1";b.textContent=label||"Tap again to confirm";setTimeout(function(){b.dataset.a="";b.textContent=t},4000)}}
 var PFC=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#2E8B57","#A33B6B","#8A9AA3"],pfPie="inv";
@@ -578,7 +597,7 @@ function moneyOverCard(){
   for(var i=5;i>=0;i--){var ym=shiftMonth(cur,-i),m=monthSums(ym),lab=new Date(ym+"-01T12:00:00").toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
     groups.push({label:lab,values:[m.inc,m.out]});lefts.push([lab,m.left])}
   return '<section class="card" style="margin-top:16px"><h2>Month by month</h2>'+barChart(groups,[{label:"Income",color:"#2E8B57"},{label:"Costs",color:"#B5532A"}],"group",fe)+
-  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:6px;margin-top:8px">'+lefts.map(function(l){return '<div class="meta">'+l[0]+'<br><b class="'+(l[1]<0?"neg":"")+'">Left: '+fe(l[1])+'</b></div>'}).join("")+'</div></section>'}
+  '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:6px;margin-top:8px">'+lefts.map(function(l){return '<div class="meta">'+l[0]+'<br><b class="'+(l[1]<0?"neg":"")+'">Left: '+fe(l[1])+'</b></div>'}).join("")+'</div></section>'}
 
 function today(){
   var d=new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
