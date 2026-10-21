@@ -117,6 +117,21 @@ body{overflow-x:hidden}
   .cd b{font-size:12px;text-align:center}
   .ev,.tk{font-size:10px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 }
+
+/* overlap fixes */
+[hidden]{display:none!important}
+ul.tasks li{min-width:0}
+ul.tasks li>.tt{flex:1 1 0;min-width:0;overflow-wrap:anywhere}
+ul.tasks li>input[type=checkbox],ul.tasks li>.pill,ul.tasks li>button,ul.tasks li>b{flex:none}
+ul.tasks li>.pill{white-space:nowrap}
+@media(max-width:600px){
+  ul.tasks li{gap:8px}
+  button.x{padding:4px 6px}
+  .form label,.form button[type=submit]{min-width:0}
+  .tools{gap:8px}
+  .cd b{margin-bottom:1px}
+  .cd{overflow:hidden}
+}
 </style>
 </head>
 <body>
