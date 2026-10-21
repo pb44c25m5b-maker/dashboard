@@ -77,6 +77,7 @@ th{text-align:left;font-weight:600;color:var(--muted);font-size:12px;padding:6px
 td{padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}td.n,th.n{text-align:right}
 td input{width:96px;font:inherit;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:right}
 .pos{color:#1B7A3E}
+.rd{font-size:10px;font-weight:600;background:#7FB3A0;color:#fff;border-radius:3px;padding:0 4px;margin-bottom:2px}
 h3{font-size:15px;color:var(--muted);margin:22px 0 6px}
 </style>
 </head>
@@ -241,8 +242,8 @@ function bindSettings(){
   document.getElementById("rfile").onchange=function(){var f=this.files[0];if(!f)return;var r=new FileReader();r.onload=function(){document.getElementById("rtext").value=r.result;document.getElementById("rmsg").textContent="File loaded. Tap Restore."};r.readAsText(f)};
   armed(document.getElementById("rgo"),function(){restore(document.getElementById("rtext").value)},"Tap again to replace all data")}
 
-var CATS=["Anki","Studying (no electronics)","Martial arts","Work","Eating","Sleep","Other"];
-var COLS=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#8A9AA3"];
+var CATS=["Anki","Studying (no electronics)","Martial arts","Work","Eating","Sleep","Other","Rest day"];
+var COLS=["#0E7C86","#3B6FB6","#B5532A","#7A5BB0","#C58A00","#4C5D8A","#8A9AA3","#7FB3A0"];
 var timeRange=7;
 var BASE_CATS=CATS.slice(),BASE_COLS=COLS.slice(),EXTRA=["#2E8B57","#A33B6B","#6B8E23","#D2691E","#20B2AA","#9370DB"];
 function refreshCats(){
@@ -270,32 +271,34 @@ function timePage(){
   var range=lastDays(timeRange),inR=es.filter(function(e){return range.indexOf(e.date)>=0});
   var h='<h1>Time</h1><p class="sub">Add each activity as you finish it. Totals and graphs update on their own.</p>'+
   '<form class="form" id="tmf"><label>Activity<select id="tc">'+CATS.map(function(c){return '<option>'+esc(c)+'</option>'}).join("")+'<option value="__new">+ New activity...</option></select></label>'+'<label id="tnl2" hidden>New activity name<input id="tnn" maxlength="30"></label>'+
-  '<label>Hours<input type="number" id="th" min="0.05" max="24" step="0.05" required style="width:90px" placeholder="1.5"></label>'+
-  '<label>Date<input type="date" id="tdt" value="'+td+'" required></label><label>Repeat<select id="trp"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label><button type="submit">Add</button></form>'+
+  '<label>Hours<input type="number" id="th" min="0" max="24" step="0.05" required style="width:90px" placeholder="1.5"></label>'+
+  '<label>Date<input type="date" id="tdt" value="'+td+'" required></label><label>Repeat<select id="trp"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label><label class="t">Note (optional)<input id="tnote" maxlength="120"></label><button type="submit">Add</button></form>'+
   goalsBlock()+'<div class="two"><section class="card"><h2>Hours per day</h2><div class="chart">'+days.map(function(d,i){
-    return '<div class="col'+(d===td?" now":"")+'" title="'+d+': '+fh(tot[i])+'">'+(tot[i]?fh(tot[i]).replace(" h",""):"")+'<i style="height:'+Math.round(tot[i]/mx*100)+'%"></i><span>'+parseInt(d.slice(8))+'</span></div>'}).join("")+'</div><p class="meta">Last 14 days, all activities together.</p></section>'+
-  '<section class="card"><h2>Where the time goes</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(timeRange===7?" sel":"")+'" data-tr="7">Last 7 days</button><button class="alt'+(timeRange===30?" sel":"")+'" data-tr="30">Last 30 days</button></div>'+pie(catTotals(inR))+'</section></div>';
+    return '<div class="col'+(d===td?" now":"")+'" title="'+esc(niceDate(d)+': '+fh(tot[i])+(isRestDay(es,d)?" · Rest day":"")+dayNotes(es,d))+'">'+(isRestDay(es,d)?'<b class="rd">R</b>':'')+(tot[i]?fh(tot[i]).replace(" h",""):"")+'<i style="height:'+Math.round(tot[i]/mx*100)+'%"></i><span>'+parseInt(d.slice(8))+'</span></div>'}).join("")+'</div><p class="meta">Last 14 days, all activities together. Hover a day to see notes; R = rest day.</p></section>'+
+  '<section class="card"><h2>Where the time goes</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(timeRange===7?" sel":"")+'" data-tr="7">Last 7 days</button><button class="alt'+(timeRange===30?" sel":"")+'" data-tr="30">Last 30 days</button></div>'+pie(catTotals(inR))+restLine(es,range)+'</section></div>';
   h+=timePickCard();h+=timeDayCard();h+=timeOverCard();var rec=es.slice().sort(function(a,b){return b.date.localeCompare(a.date)||b.id-a.id}).slice(0,15);
   h+='<h3>Recent entries</h3><section class="card">'+(rec.length?'<ul class="tasks">'+rec.map(function(e){
-    return '<li><div class="tt">'+esc(e.cat)+'<div class="meta">'+niceDate(e.date)+'</div></div><b>'+fh(e.h)+'</b><button class="x" data-tdel="'+e.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No hours logged yet. Add your first entry above.</p>')+'</section>';h+=timeRulesCard();
+    return '<li><div class="tt">'+esc(e.cat)+'<div class="meta">'+niceDate(e.date)+(e.note?" · "+esc(e.note):"")+'</div></div><b>'+fh(e.h)+'</b><button class="x" data-tdel="'+e.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No hours logged yet. Add your first entry above.</p>')+'</section>';h+=timeRulesCard();
   return h}
 function bindTime(){
-  var f=document.getElementById("tmf");if(!f)return;var tcs=document.getElementById("tc");tcs.onchange=function(){document.getElementById("tnl2").hidden=tcs.value!=="__new"};
+  var f=document.getElementById("tmf");if(!f)return;var tcs=document.getElementById("tc");tcs.onchange=function(){document.getElementById("tnl2").hidden=tcs.value!=="__new";if(tcs.value==="Rest day"){var t1=document.getElementById("th");if(!t1.value)t1.value=0}else{var t2=document.getElementById("th");if(t2.value==="0")t2.value=""}};document.getElementById("th").oninput=function(){this.setCustomValidity("")};
   f.onsubmit=function(e){e.preventDefault();var hh=parseFloat(document.getElementById("th").value);
-    if(!(hh>0&&hh<=24))return;
+    if(!(hh>=0&&hh<=24))return;
+    if(hh===0&&document.getElementById("tc").value!=="Rest day"){var t0=document.getElementById("th");t0.setCustomValidity("Only Rest day can have 0 hours.");t0.reportValidity();return}
     var rep=document.getElementById("trp").value,date=document.getElementById("tdt").value,cat=document.getElementById("tc").value;
     if(cat==="__new"){cat=document.getElementById("tnn").value.trim();if(!cat){document.getElementById("tnn").focus();return}
       var hit=CATS.filter(function(x){return x.toLowerCase()===cat.toLowerCase()})[0];
       if(hit)cat=hit;else{var cc=load("ccats");cc.push(cat);save("ccats",cc);refreshCats()}}
-    if(rep==="none"){var es=tload();es.push({id:Date.now(),date:date,cat:cat,h:hh});if(!save("time",es))return}
-    else{var rs=load("trules");rs.push({id:Date.now(),start:date,rep:rep,k:0,cat:cat,h:hh});if(!save("trules",rs))return;applyTimeRules()}
+    var note=document.getElementById("tnote").value.trim();
+    if(rep==="none"){var es=tload();es.push({id:Date.now(),date:date,cat:cat,h:hh,note:note});if(!save("time",es))return}
+    else{var rs=load("trules");rs.push({id:Date.now(),start:date,rep:rep,k:0,cat:cat,h:hh,note:note});if(!save("trules",rs))return;applyTimeRules()}
     render()};
   document.querySelectorAll("button[data-tr]").forEach(function(b){b.onclick=function(){timeRange=+b.dataset.tr;render()}});
   document.querySelectorAll("button[data-tdel]").forEach(function(b){b.onclick=function(){save("time",tload().filter(function(e){return e.id!=b.dataset.tdel}));render()}})}
 function timeCard(){
   var es=tload().filter(function(e){return e.date===todayStr()}),tot=es.reduce(function(a,e){return a+e.h},0);
   if(!es.length)return '<section class="card"><h2>Time logged today</h2><p class="empty">No hours logged yet. <a href="#Time">Add some</a>.</p></section>';
-  return '<section class="card"><h2>Time logged today</h2><p class="meta">Total: '+fh(tot)+'</p>'+pie(catTotals(es))+'</section>'}
+  return '<section class="card"><h2>Time logged today</h2><p class="meta">Total: '+fh(tot)+'</p>'+(es.some(function(e){return e.cat==="Rest day"})?'<p class="meta">Rest day logged</p>':'')+pie(catTotals(es))+'</section>'}
 function sleepCard(){
   var es=tload().filter(function(e){return e.cat==="Sleep"});
   if(!es.length)return '<section class="card"><h2>Sleep</h2><p class="empty">No sleep logged yet. <a href="#Time">Add it</a> under Time.</p></section>';
@@ -425,11 +428,11 @@ function pfCard(){
 function barChart(groups,series,mode,fmt){
   var W=320,H=165,L=40,B=24,T=10,pw=W-L-6,ph=H-B-T,n=groups.length;
   var mx=0;groups.forEach(function(g){var v=mode==="stack"?g.values.reduce(function(a,b){return a+b},0):Math.max.apply(null,g.values);if(v>mx)mx=v});
-  if(!mx)return '<p class="empty">Nothing to show yet. Add some entries first.</p>';
+  var anyRest=groups.some(function(g){return g.rest});if(!mx&&!anyRest)return '<p class="empty">Nothing to show yet. Add some entries first.</p>';if(!mx)mx=1;
   var gw=pw/n,svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" role="img" aria-label="Bar chart"><line x1="'+L+'" y1="'+(T+ph)+'" x2="'+(W-4)+'" y2="'+(T+ph)+'" stroke="#D5E0E5"/>'+
   '<text x="2" y="'+(T+8)+'" font-size="9" fill="#5B6F7A">'+fmt(mx)+'</text><text x="2" y="'+(T+ph)+'" font-size="9" fill="#5B6F7A">0</text>';
   groups.forEach(function(g,i){var x0=L+i*gw+gw*0.15,bw=gw*0.7;
-    if(mode==="stack"){var y=T+ph;g.values.forEach(function(v,k){if(v<=0)return;var hh=v/mx*ph;y-=hh;svg+='<rect x="'+x0.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+series[k].color+'"><title>'+esc(series[k].label)+': '+fmt(v)+'</title></rect>'})}
+    if(mode==="stack"){if(g.tip)svg+='<rect x="'+x0.toFixed(1)+'" y="'+T+'" width="'+bw.toFixed(1)+'" height="'+ph+'" fill="transparent"><title>'+esc(g.tip)+'</title></rect>';var y=T+ph;g.values.forEach(function(v,k){if(v<=0)return;var hh=v/mx*ph;y-=hh;svg+='<rect x="'+x0.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+series[k].color+'"><title>'+esc(series[k].label)+': '+fmt(v)+(g.notes&&g.notes[k]?"\n"+esc(g.notes[k]):"")+'</title></rect>'});if(g.rest)svg+='<rect x="'+x0.toFixed(1)+'" y="'+(T+ph+2)+'" width="'+bw.toFixed(1)+'" height="4" rx="2" fill="#7FB3A0"><title>'+esc(g.tip||"Rest day")+'</title></rect>'}
     else{var sw=bw/g.values.length;g.values.forEach(function(v,k){var hh=v/mx*ph;svg+='<rect x="'+(x0+k*sw).toFixed(1)+'" y="'+(T+ph-hh).toFixed(1)+'" width="'+(sw-1).toFixed(1)+'" height="'+hh.toFixed(1)+'" fill="'+series[k].color+'"><title>'+esc(series[k].label)+': '+fmt(v)+'</title></rect>'})}
     svg+='<text x="'+(L+i*gw+gw/2).toFixed(1)+'" y="'+(H-8)+'" font-size="8.5" text-anchor="middle" fill="#5B6F7A">'+esc(g.label)+'</text>'});
   return svg+'</svg><ul class="leg" style="display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:6px">'+series.map(function(x){return '<li><span class="sw" style="background:'+x.color+'"></span>'+esc(x.label)+'</li>'}).join("")+'</ul>'}
@@ -437,23 +440,25 @@ var timeGran="week",timeNoSleep=false;
 function timeOverCard(){
   var es=tload(),groups=[],cats=CATS.map(function(c,i){return{label:c,color:COLS[i]}}).filter(function(c){return!(timeNoSleep&&c.label==="Sleep")});
   function vals(f){return cats.map(function(c){return es.filter(function(e){return e.cat===c.label&&f(e)}).reduce(function(a,e){return a+e.h},0)})}
-  if(timeGran==="week"){var ws=weekStart(todayStr());for(var i=7;i>=0;i--){(function(w){groups.push({label:new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}),values:vals(function(e){return weekStart(e.date)===w})})})(addDays(ws,-7*i))}}
-  else{for(var j=5;j>=0;j--){(function(ym){groups.push({label:new Date(ym+"-01T12:00:00").toLocaleDateString("en-GB",{month:"short",year:"2-digit"}),values:vals(function(e){return e.date.slice(0,7)===ym})})})(shiftMonth(todayStr().slice(0,7),-j))}}
+  if(timeGran==="week"){var ws=weekStart(todayStr());for(var i=7;i>=0;i--){(function(w){groups.push({label:new Date(w+"T12:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"short"}),f:function(e){return weekStart(e.date)===w},values:vals(function(e){return weekStart(e.date)===w})})})(addDays(ws,-7*i))}}
+  else{for(var j=5;j>=0;j--){(function(ym){groups.push({label:new Date(ym+"-01T12:00:00").toLocaleDateString("en-GB",{month:"short",year:"2-digit"}),f:function(e){return e.date.slice(0,7)===ym},values:vals(function(e){return e.date.slice(0,7)===ym})})})(shiftMonth(todayStr().slice(0,7),-j))}}
+  groups.forEach(function(g){var u={};es.forEach(function(e){if(e.cat==="Rest day"&&g.f(e))u[e.date]=1});var n=Object.keys(u).length;g.rest=n>0;g.tip=(timeGran==="week"?"Week of ":"")+g.label+" · "+fh(g.values.reduce(function(a,v){return a+v},0))+(n?" · "+n+" rest day"+(n>1?"s":""):"")});
   return '<section class="card" style="margin-top:16px"><h2>Hours over time</h2><div class="tools" style="margin:0 0 8px"><button class="alt'+(timeGran==="week"?" sel":"")+'" data-tg="week">By week</button><button class="alt'+(timeGran==="month"?" sel":"")+'" data-tg="month">By month</button><button class="alt'+(timeNoSleep?" sel":"")+'" data-ns="1">Without sleep</button></div>'+barChart(groups,cats,"stack",fh)+'</section>'}
 function applyTimeRules(){
   var rs=load("trules");if(!rs.length)return;
   var es=tload(),t=todayStr(),ch=false;
-  rs.forEach(function(r){var g=0;while(occDate(r,r.k)<=t&&g++<600){es.push({id:Date.now()+Math.floor(Math.random()*1e6),date:occDate(r,r.k),cat:r.cat,h:r.h,rid:r.id});r.k++;ch=true}});
+  rs.forEach(function(r){var g=0;while(occDate(r,r.k)<=t&&g++<600){es.push({id:Date.now()+Math.floor(Math.random()*1e6),date:occDate(r,r.k),cat:r.cat,h:r.h,note:r.note||"",rid:r.id});r.k++;ch=true}});
   if(ch){save("time",es);save("trules",rs)}}
 function timeRulesCard(){
   var rl=load("trules");
   return '<h3>Repeating entries</h3><section class="card">'+(rl.length?'<ul class="tasks">'+rl.map(function(r){
     return '<li><div class="tt">'+esc(r.cat)+'<div class="meta">'+(r.rep==="week"?"every week":"every month")+' from '+niceDate(r.start)+'</div></div><b>'+fh(r.h)+'</b><button class="x" data-trdel="'+r.id+'">Stop</button></li>'}).join("")+'</ul><p class="meta">These hours are added automatically on their dates. If you skip a session, delete that entry so your totals stay true.</p>':'<p class="empty">None yet. Choose a Repeat option when adding hours, for example martial arts every week.</p>')+'</section>'}
+function notRest(c){return c!=="Rest day"}
 function goalsLoad(){var g=load("goals");return Array.isArray(g)?{}:g}
 function goalsCard(){
   var g=goalsLoad();
   return '<section class="card"><h2>Daily goals</h2><p class="meta">Hours per day you want to reach, at least. Leave a box empty for no goal.</p><div class="form">'+
-  CATS.map(function(c,i){return '<label>'+esc(c)+'<input type="number" id="g'+i+'" min="0" max="24" step="0.25" style="width:90px" value="'+(g[c]!=null?g[c]:"")+'"></label>'}).join("")+
+  CATS.filter(notRest).map(function(c,i){return '<label>'+esc(c)+'<input type="number" id="g'+i+'" min="0" max="24" step="0.25" style="width:90px" value="'+(g[c]!=null?g[c]:"")+'"></label>'}).join("")+
   '</div><button id="gsave">Save goals</button><p class="saved" id="gmsg"></p></section><div style="height:16px"></div>'}
 function customCard(){
   var cu=CATS.slice(BASE_CATS.length);
@@ -465,7 +470,7 @@ function bindGoals(){
     if(tload().some(function(e){return e.cat===name})){document.getElementById("ccmsg").textContent="This activity still has entries. Delete those on the Time page first.";return}
     save("ccats",load("ccats").filter(function(c){return c!==name}));render()}});
   var b=document.getElementById("gsave");if(!b)return;
-  b.onclick=function(){var g={};CATS.forEach(function(c,i){var v=parseFloat(document.getElementById("g"+i).value);if(v>0)g[c]=v});
+  b.onclick=function(){var g={};CATS.filter(notRest).forEach(function(c,i){var v=parseFloat(document.getElementById("g"+i).value);if(v>0)g[c]=v});
     document.getElementById("gmsg").textContent=save("goals",g)?"Saved":""}}
 function goalsProgress(){
   var g=goalsLoad(),cs=CATS.filter(function(c){return g[c]>0});if(!cs.length)return "";
@@ -478,14 +483,17 @@ function goalsProgress(){
   return '<section class="card"><h2>Goals</h2>'+rows+'</section>'}
 function goalsBlock(){var g=goalsProgress();return g?'<div style="margin-bottom:16px">'+g+'</div>':""}
 var pickDay=todayStr();
+function isRestDay(es,d){return es.some(function(e){return e.date===d&&e.cat==="Rest day"})}
+function restLine(es,range){var r=range.filter(function(d){return isRestDay(es,d)});return r.length?'<p class="meta">Rest days: '+r.length+' ('+r.map(function(d){return niceDate(d)}).join(", ")+')</p>':""}
+function dayNotes(es,d){var n=es.filter(function(e){return e.date===d&&e.note}).map(function(e){return e.cat+": "+e.note});return n.length?"\n"+n.join("\n"):""}
 function timePickCard(){
   var es=tload().filter(function(e){return e.date===pickDay}),
-  rows=CATS.map(function(c,i){return{label:c,color:COLS[i],v:es.filter(function(e){return e.cat===c}).reduce(function(a,e){return a+e.h},0)}}).filter(function(r){return r.v>0}),
+  rows=CATS.map(function(c,i){var l=es.filter(function(e){return e.cat===c});return{label:c,color:COLS[i],n:l.length,v:l.reduce(function(a,e){return a+e.h},0),notes:l.filter(function(e){return e.note}).map(function(e){return e.note})}}).filter(function(r){return r.n>0}),
   tot=rows.reduce(function(a,r){return a+r.v},0),mx=Math.max.apply(null,rows.map(function(r){return r.v}).concat([0.01]));
   return '<section class="card" style="margin-top:16px"><h2>Pick a day</h2><div class="tools" style="margin:0 0 10px;flex-wrap:wrap"><button class="alt" data-pd="-1" aria-label="Previous day">Previous</button>'+
   '<input type="date" id="pday" value="'+pickDay+'" aria-label="Day" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px"><button class="alt" data-pd="1" aria-label="Next day">Next</button><button class="alt" data-pd="0">Today</button></div>'+
   '<p class="meta" style="margin:0 0 8px">'+niceDate(pickDay)+' · Total: <b>'+fh(tot)+'</b></p>'+
-  (rows.length?rows.map(function(r){return '<div style="margin:8px 0"><div style="display:flex;justify-content:space-between"><span>'+esc(r.label)+'</span><b>'+fh(r.v)+'</b></div><div style="background:#E8EDEF;border-radius:6px;height:12px;margin-top:3px"><div style="width:'+Math.round(r.v/mx*100)+'%;background:'+r.color+';height:12px;border-radius:6px"></div></div></div>'}).join(""):'<p class="empty">Nothing logged on this day.</p>')+'</section>'}
+  (rows.length?rows.map(function(r){return '<div style="margin:8px 0" title="'+esc(r.notes.join("\n"))+'"><div style="display:flex;justify-content:space-between"><span>'+esc(r.label)+'</span><b>'+fh(r.v)+'</b></div><div style="background:#E8EDEF;border-radius:6px;height:12px;margin-top:3px"><div style="width:'+Math.round(r.v/mx*100)+'%;background:'+r.color+';height:12px;border-radius:6px"></div></div>'+r.notes.map(function(n){return '<div class="meta">Note: '+esc(n)+'</div>'}).join("")+'</div>'}).join(""):'<p class="empty">Nothing logged on this day.</p>')+'</section>'}
 var dayRange=7,dayCat="all",dayNoSleep=false;
 function timeDayCard(){
   var es=tload(),cs=dayCat==="all"?CATS.filter(function(c){return!(dayNoSleep&&c==="Sleep")}):[dayCat];
@@ -493,13 +501,16 @@ function timeDayCard(){
   var series=cs.map(function(c){return{label:c,color:COLS[CATS.indexOf(c)]}});
   var groups=lastDays(dayRange).map(function(d){
     var dt=new Date(d+"T12:00:00");
+    var dayEs=es.filter(function(e){return e.date===d&&cs.indexOf(e.cat)>=0}),isRest=(dayCat==="all"||dayCat==="Rest day")&&isRestDay(es,d),
+    tip=niceDate(d)+" · "+fh(dayEs.reduce(function(a,e){return a+e.h},0))+(isRest?" · Rest day":"")+dayEs.filter(function(e){return e.note}).map(function(e){return "\n"+e.cat+": "+e.note}).join("");
     return{label:dayRange<=7?dt.toLocaleDateString("en-GB",{weekday:"short"})+" "+dt.getDate():String(dt.getDate()),
-      values:cs.map(function(c){return es.filter(function(e){return e.date===d&&e.cat===c}).reduce(function(a,e){return a+e.h},0)})}});
+      values:cs.map(function(c){return es.filter(function(e){return e.date===d&&e.cat===c}).reduce(function(a,e){return a+e.h},0)}),
+      notes:cs.map(function(c){return es.filter(function(e){return e.date===d&&e.cat===c&&e.note}).map(function(e){return e.note}).join("; ")}),rest:isRest,tip:tip}});
   return '<section class="card" style="margin-top:16px"><h2>Daily overview</h2><div class="tools" style="margin:0 0 8px;flex-wrap:wrap">'+
   '<button class="alt'+(dayRange===7?" sel":"")+'" data-dr="7">7 days</button><button class="alt'+(dayRange===14?" sel":"")+'" data-dr="14">14 days</button>'+
   (dayCat==="all"?'<button class="alt'+(dayNoSleep?" sel":"")+'" data-dn="1">Without sleep</button>':'')+
   '<select id="dcat" aria-label="Activity" style="font:inherit;padding:8px;border:1px solid var(--line);border-radius:6px"><option value="all">All activities</option>'+
-  CATS.map(function(c){return '<option'+(c===dayCat?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select></div>'+barChart(groups,series,"stack",fh)+'</section>'}
+  CATS.map(function(c){return '<option'+(c===dayCat?" selected":"")+'>'+esc(c)+'</option>'}).join("")+'</select></div>'+barChart(groups,series,"stack",fh)+(function(){var rd=lastDays(dayRange).filter(function(d){return es.some(function(e){return e.date===d&&e.cat==="Rest day"})}).map(niceDate);return rd.length?'<p class="meta">Rest days: '+rd.join(", ")+'</p>':""})()+'</section>'}
 function bindTimeGraph(){
   var pd=document.getElementById("pday");if(pd)pd.onchange=function(){if(pd.value){pickDay=pd.value;render()}};
   document.querySelectorAll("button[data-pd]").forEach(function(b){b.onclick=function(){var n=+b.dataset.pd;pickDay=n===0?todayStr():addDays(pickDay,n);render()}});
