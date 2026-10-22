@@ -160,6 +160,15 @@ ul.tasks li>.pill{white-space:nowrap}
   #tf input,#tf select,#af input,#af select{box-sizing:border-box;width:100%!important;min-width:0;max-width:100%}
   #tf input[type=date],#af input[type=date],#af input[type=time]{-webkit-appearance:none;appearance:none;min-height:38px}
 }
+
+/* Time form only: no overlapping fields on phones */
+@media(max-width:900px){
+  #tmf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+  #tmf label{min-width:0;flex:none}
+  #tmf .t,#tmf #tnl2,#tmf button[type=submit]{grid-column:1/-1}
+  #tmf input,#tmf select{box-sizing:border-box;width:100%!important;min-width:0;max-width:100%}
+  #tmf input[type=date]{-webkit-appearance:none;appearance:none;min-height:38px}
+}
 </style>
 </head>
 <body>
