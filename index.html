@@ -169,6 +169,18 @@ ul.tasks li>.pill{white-space:nowrap}
   #tmf input,#tmf select{box-sizing:border-box;width:100%!important;min-width:0;max-width:100%}
   #tmf input[type=date]{-webkit-appearance:none;appearance:none;min-height:38px}
 }
+
+/* multi-day events */
+.sp{position:relative;z-index:1;box-sizing:border-box;height:18px;line-height:18px;padding:0 7px;margin-bottom:2px;background:var(--accent);color:#fff;border-radius:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.sp.cl{margin-left:-5px;padding-left:12px;border-top-left-radius:0;border-bottom-left-radius:0}
+.sp.cr{border-top-right-radius:0;border-bottom-right-radius:0}
+.sp0{height:18px;margin-bottom:2px}
+@media(max-width:600px){
+  .sp,.sp0{height:15px;line-height:15px}
+  .sp{font-size:10px;padding:0 4px}
+  .sp.cl{padding-left:9px}
+  .cd{overflow:visible}
+}
 </style>
 </head>
 <body>
@@ -241,7 +253,9 @@ function todoCard(){
 
 var calView="month",calAnchor=todayStr();
 function loadA(){return load("appts")}
+function isSpan(a){return!!(a.until&&a.until>a.date)}
 function occurs(a,day){
+  if(isSpan(a))return day>=a.date&&day<=a.until;
   if(day<a.date)return false;
   if(!a.rep||a.rep==="none")return day===a.date;
   if(a.rep==="week")return Math.round((new Date(day+"T12:00:00")-new Date(a.date+"T12:00:00"))/864e5)%7===0;
@@ -258,29 +272,44 @@ function calPage(){
     for(var j=0;j<42;j++){var x=addDays(st,j);if(j>=35&&new Date(x+"T12:00:00").getMonth()!==m)break;days.push(x)}
     title=d.toLocaleDateString("en-GB",{month:"long",year:"numeric"})}
   var td=todayStr(),mon=d.getMonth();
+  var spans=loadA().filter(function(a){return isSpan(a)&&a.date<=days[days.length-1]&&a.until>=days[0]}).sort(function(a,b){return a.date.localeCompare(b.date)||b.until.localeCompare(a.until)||a.id-b.id}),laneEnd=[],lane={};
+  spans.forEach(function(a){var L=0;while(laneEnd[L]&&laneEnd[L]>=a.date)L++;laneEnd[L]=a.until;lane[a.id]=L});
+  function spanRows(x,i){
+    var act=spans.filter(function(a){return a.date<=x&&a.until>=x});if(!act.length)return "";
+    var mxl=Math.max.apply(null,act.map(function(a){return lane[a.id]})),out="";
+    for(var L=0;L<=mxl;L++){
+      var a=act.filter(function(e){return lane[e.id]===L})[0];
+      if(a&&(a.date===x||i%7===0)){
+        var n=0,rowEnd=i-i%7+6;
+        for(var k=i;k<=rowEnd&&k<days.length&&days[k]<=a.until;k++)n++;
+        var cl=a.date<x,cr=a.until>days[i+n-1],tip=a.title+" ("+niceDate(a.date)+" to "+niceDate(a.until)+(a.start?", "+a.start+(a.end?"-"+a.end:""):"")+")";
+        out+='<div class="sp'+(cl?" cl":"")+(cr?" cr":"")+'" style="width:calc('+n+'*100% + '+((n-1)*9+(cl?5:0)+(cr?5:0))+'px)" title="'+esc(tip)+'">'+esc(a.title)+'</div>'
+      }else out+='<div class="sp0"></div>'
+    }
+    return out}
   var h='<h1>Calendar</h1><p class="sub">Appointments and task deadlines in one place.</p>'+
   '<form class="form" id="af"><label class="t">Appointment<input id="at" required maxlength="120"></label>'+
-  '<label>Date<input type="date" id="ad" value="'+td+'" required></label>'+
+  '<label>Date<input type="date" id="ad" value="'+td+'" required></label><label>Until (optional)<input type="date" id="au"></label>'+
   '<label>Start<input type="time" id="as"></label><label>End<input type="time" id="ae"></label>'+
   '<label>Repeat<select id="ar"><option value="none">Never</option><option value="week">Every week</option><option value="month">Every month</option></select></label>'+
   '<button type="submit">Add appointment</button></form>'+
   '<div class="tools"><h2>'+title+'</h2><div class="seg"><button class="alt'+(calView==="week"?" sel":"")+'" data-v="week">Week</button><button class="alt'+(calView==="month"?" sel":"")+'" data-v="month">Month</button></div>'+
   '<div class="seg"><button class="alt" data-n="-1" aria-label="Previous">&lsaquo; Prev</button><button class="alt" data-n="0">Today</button><button class="alt" data-n="1" aria-label="Next">Next &rsaquo;</button></div></div>'+
   '<div class="cal"><div class="cg">'+["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(function(n){return '<div class="ch">'+n+'</div>'}).join("");
-  days.forEach(function(x){
+  days.forEach(function(x,idx){
     var out=calView==="month"&&new Date(x+"T12:00:00").getMonth()!==mon;
     h+='<div class="cd'+(out?" out":"")+(x===td?" now":"")+'"><b>'+parseInt(x.slice(8))+'</b>'+
-    apptsOn(x).map(function(a){return '<div class="ev" title="'+esc(apptLabel(a))+'">'+esc(apptLabel(a))+'</div>'}).join("")+
+    spanRows(x,idx)+apptsOn(x).filter(function(a){return!isSpan(a)}).map(function(a){return '<div class="ev" title="'+esc(apptLabel(a))+'">'+esc(apptLabel(a))+'</div>'}).join("")+
     tasksOn(x).map(function(t){return '<div class="tk'+(x<td?" od":"")+'" title="'+esc(t.title)+'">Task: '+esc(t.title)+'</div>'}).join("")+'</div>'});
-  h+='</div></div><p class="legend">Blue: appointments. Yellow: tasks due that day (red if overdue). Tick tasks on the Tasks page.</p>';
+  h+='</div></div><p class="legend">Blue: appointments (long lines = multi-day events). Yellow: tasks due that day (red if overdue). Tick tasks on the Tasks page.</p>';
   var all=loadA().sort(function(a,b){return a.date.localeCompare(b.date)});
   h+='<h3>All appointments</h3><section class="card">'+(all.length?'<ul class="tasks">'+all.map(function(a){
-    return '<li><div class="tt">'+esc(a.title)+'<div class="meta">'+niceDate(a.date)+(a.start?", "+a.start+(a.end?" to "+a.end:""):"")+(a.rep==="week"?" · repeats weekly":a.rep==="month"?" · repeats monthly":"")+'</div></div><button class="x" data-adel="'+a.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No appointments yet. Add your first one above.</p>')+'</section>';
+    return '<li><div class="tt">'+esc(a.title)+'<div class="meta">'+niceDate(a.date)+(isSpan(a)?" to "+niceDate(a.until):"")+(a.start?", "+a.start+(a.end?" to "+a.end:""):"")+(a.rep==="week"?" · repeats weekly":a.rep==="month"?" · repeats monthly":"")+'</div></div><button class="x" data-adel="'+a.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No appointments yet. Add your first one above.</p>')+'</section>';
   return h}
 function bindCal(){
   var f=document.getElementById("af");if(!f)return;
   f.onsubmit=function(e){e.preventDefault();var a=loadA();
-    a.push({id:Date.now(),title:document.getElementById("at").value.trim(),date:document.getElementById("ad").value,start:document.getElementById("as").value,end:document.getElementById("ae").value,rep:document.getElementById("ar").value});
+    a.push({id:Date.now(),title:document.getElementById("at").value.trim(),date:document.getElementById("ad").value,start:document.getElementById("as").value,end:document.getElementById("ae").value,rep:document.getElementById("ar").value});var na=a[a.length-1],un=document.getElementById("au").value;if(un&&un>na.date){na.until=un;na.rep="none"}
     if(save("appts",a))render()};
   document.querySelectorAll("button[data-v]").forEach(function(b){b.onclick=function(){calView=b.dataset.v;render()}});
   document.querySelectorAll("button[data-n]").forEach(function(b){b.onclick=function(){var n=+b.dataset.n;
@@ -288,9 +317,9 @@ function bindCal(){
   document.querySelectorAll("button[data-adel]").forEach(function(b){b.onclick=function(){save("appts",loadA().filter(function(a){return a.id!=b.dataset.adel}));render()}})}
 function apptCard(){
   var td=todayStr(),list=[];
-  for(var i=0;i<14&&list.length<6;i++){var day=addDays(td,i);apptsOn(day).forEach(function(a){list.push([day,a])})}
+  for(var i=0;i<14&&list.length<6;i++){var day=addDays(td,i);apptsOn(day).forEach(function(a){if(isSpan(a)&&list.some(function(q){return q[1].id===a.id}))return;list.push([day,a])})}
   return '<section class="card"><h2>Appointments</h2>'+(list.length?'<ul class="tasks">'+list.slice(0,5).map(function(p){
-    return '<li><div class="tt">'+esc(p[1].title)+'<div class="meta">'+(p[0]===td?"Today":niceDate(p[0]))+(p[1].start?", "+p[1].start:"")+'</div></div></li>'}).join("")+'</ul>':'<p class="empty">Nothing in the next 14 days. <a href="#Calendar">Add one</a>.</p>')+'</section>'}
+    return '<li><div class="tt">'+esc(p[1].title)+'<div class="meta">'+(isSpan(p[1])?niceDate(p[1].date)+" to "+niceDate(p[1].until):p[0]===td?"Today":niceDate(p[0]))+(p[1].start?", "+p[1].start:"")+'</div></div></li>'}).join("")+'</ul>':'<p class="empty">Nothing in the next 14 days. <a href="#Calendar">Add one</a>.</p>')+'</section>'}
 
 var DL=null;
 try{if(window.claude&&claude.use)claude.use("downloads").then(function(d){DL=d;if(decodeURIComponent(location.hash.slice(1))==="Settings")render()}).catch(function(){})}catch(e){}
