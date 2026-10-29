@@ -181,6 +181,29 @@ ul.tasks li>.pill{white-space:nowrap}
   .sp.cl{padding-left:9px}
   .cd{overflow:visible}
 }
+
+/* training */
+.tr{padding:1px 5px;border-radius:4px;margin-bottom:2px;overflow-wrap:anywhere;background:#E3F3E6;border-left:3px solid #2E8B57;color:#17482C}
+.tr.dn{background:#2E8B57;color:#fff}
+.chips{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.chip{position:relative;display:block!important}
+.chip input{position:absolute;inset:0;width:100%;height:100%;margin:0;opacity:0;cursor:pointer}
+.chip span{display:block;text-align:center;padding:8px 0;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--ink);font-size:13px}
+.chip input:checked+span{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip input:focus-visible+span{outline:3px solid #4FC3CE}
+.trmsg{flex:1 1 100%;margin:0;color:#B3261E;font-size:13px}
+.trmsg:empty{display:none}
+.trday{padding:8px 0;border-top:1px solid var(--line)}
+.trday:first-child{border-top:0}
+.trh{font-weight:600;font-size:14px}.trday.now .trh{color:var(--accent)}
+ul.tasks li.trdone .tt{text-decoration:line-through;color:var(--muted)}
+@media(max-width:600px){.tr{font-size:10px;padding:1px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}
+@media(max-width:900px){
+  #trf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+  #trf label{min-width:0;flex:none}
+  #trf .t,#trf .trmsg,#trf button[type=submit]{grid-column:1/-1}
+  #trf select,#trf input:not([type=checkbox]){box-sizing:border-box;width:100%!important;min-width:0;max-width:100%}
+}
 </style>
 </head>
 <body>
@@ -191,7 +214,7 @@ ul.tasks li>.pill{white-space:nowrap}
 <main id="page"></main>
 
 <script>
-var PAGES=["Today","Tasks","Calendar","Time","Money","Portfolio","Settings"];
+var PAGES=["Today","Tasks","Calendar","Time","Training","Money","Portfolio","Settings"];
 var LATER={Calendar:"Your appointments and weekly schedule will live here.",
 Time:"Quick add for Anki, studying, martial arts, work, eating, sleep and other, with graphs.",
 Money:"Quick add for income and costs, with monthly totals and graphs.",
@@ -300,8 +323,9 @@ function calPage(){
     var out=calView==="month"&&new Date(x+"T12:00:00").getMonth()!==mon;
     h+='<div class="cd'+(out?" out":"")+(x===td?" now":"")+'"><b>'+parseInt(x.slice(8))+'</b>'+
     spanRows(x,idx)+apptsOn(x).filter(function(a){return!isSpan(a)}).map(function(a){return '<div class="ev" title="'+esc(apptLabel(a))+'">'+esc(apptLabel(a))+'</div>'}).join("")+
+    trOn(x).map(function(e){var dn=(e.doneOn||[]).indexOf(x)>=0;return '<div class="tr'+(dn?" dn":"")+'" title="'+esc("Training: "+e.type+(e.note?" ("+e.note+")":"")+(dn?" - done":""))+'">'+(dn?"&#10003; ":"")+esc(e.type)+'</div>'}).join("")+
     tasksOn(x).map(function(t){return '<div class="tk'+(x<td?" od":"")+'" title="'+esc(t.title)+'">Task: '+esc(t.title)+'</div>'}).join("")+'</div>'});
-  h+='</div></div><p class="legend">Blue: appointments (long lines = multi-day events). Yellow: tasks due that day (red if overdue). Tick tasks on the Tasks page.</p>';
+  h+='</div></div><p class="legend">Blue: appointments (long lines = multi-day events). Green: training. Yellow: tasks due that day (red if overdue). Tick tasks on the Tasks page.</p>';
   var all=loadA().sort(function(a,b){return a.date.localeCompare(b.date)});
   h+='<h3>All appointments</h3><section class="card">'+(all.length?'<ul class="tasks">'+all.map(function(a){
     return '<li><div class="tt">'+esc(a.title)+'<div class="meta">'+niceDate(a.date)+(isSpan(a)?" to "+niceDate(a.until):"")+(a.start?", "+a.start+(a.end?" to "+a.end:""):"")+(a.rep==="week"?" · repeats weekly":a.rep==="month"?" · repeats monthly":"")+'</div></div><button class="x" data-adel="'+a.id+'">Delete</button></li>'}).join("")+'</ul>':'<p class="empty">No appointments yet. Add your first one above.</p>')+'</section>';
@@ -655,6 +679,54 @@ function today(){
   cards.forEach(function(c,i){if(i===1)h+=todoCard();if(c[0]==="Portfolio"){h+=pfCard();return}if(c[0]==="Appointments"){h+=apptCard();return}if(c[0]==="Time logged today"){h+=timeCard()+goalsProgress();return}if(c[0]==="Sleep"){h+=sleepCard();return}if(c[0]==="Money this month"){h+=moneyCard();return}h+='<section class="card"><h2>'+c[0]+'</h2><p class="empty">'+c[1]+'</p></section>'});
   return h+'</div>';
 }
+
+/* ---------- Training ---------- */
+var TR_TYPES=["Strength","Running","Cycling","Swimming","Yoga","Mobility","Cardio","Sport","Other"];
+var trAnchor=todayStr();
+function trOn(day){return load("training").filter(function(e){
+  if(day<e.date)return false;
+  if(e.rep==="week")return Math.round((new Date(day+"T12:00:00")-new Date(e.date+"T12:00:00"))/864e5)%7===0;
+  return day===e.date})}
+function trainPage(){
+  var ws=weekStart(trAnchor),days=[],i,td=todayStr(),names=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  for(i=0;i<7;i++)days.push(addDays(ws,i));
+  var types=TR_TYPES.concat(load("trainTypes").filter(function(t){return TR_TYPES.indexOf(t)<0}));
+  var planned=0,done=0,counts={};
+  days.forEach(function(x){trOn(x).forEach(function(e){planned++;if((e.doneOn||[]).indexOf(x)>=0)done++;counts[e.type]=(counts[e.type]||0)+1})});
+  var h='<h1>Training</h1><p class="sub">Plan what training you want to do each week. It also shows in your calendar.</p>'+
+  '<form class="form" id="trf"><label>Training type<select id="trt">'+types.map(function(t){return '<option>'+esc(t)+'</option>'}).join("")+'<option value="__new">+ New type...</option></select></label>'+
+  '<label>Repeat<select id="trr"><option value="none">This week only</option><option value="week">Every week</option></select></label>'+
+  '<label class="t" id="trnl" hidden>New type name<input id="trn" maxlength="40"></label>'+
+  '<label class="t">Note (optional)<input id="trnote" maxlength="120" placeholder="e.g. 5 km, 45 min, legs"></label>'+
+  '<div class="t"><div class="meta" style="margin-bottom:4px">Days in the week shown below</div><div class="chips">'+
+  names.map(function(n,k){return '<label class="chip"><input type="checkbox" name="trd" value="'+k+'"><span>'+n+'</span></label>'}).join("")+'</div></div>'+
+  '<p class="trmsg" id="trmsg"></p><button type="submit">Add training</button></form>'+
+  '<div class="tools"><h2>'+niceDate(days[0])+' to '+niceDate(days[6])+(ws===weekStart(td)?' (this week)':'')+'</h2><div class="seg"><button class="alt" data-trn="-1" aria-label="Previous week">&lsaquo; Prev</button><button class="alt" data-trn="0">This week</button><button class="alt" data-trn="1" aria-label="Next week">Next &rsaquo;</button></div></div>'+
+  '<section class="card" style="margin-bottom:14px"><h2>Week summary</h2>'+(planned?'<p class="meta">'+planned+' planned, '+done+' done</p><div>'+Object.keys(counts).map(function(t){return '<span class="pill" style="margin:0 6px 4px 0;display:inline-block">'+esc(t)+' x'+counts[t]+'</span>'}).join("")+'</div>':'<p class="empty">Nothing planned for this week yet.</p>')+'</section>'+
+  '<section class="card">'+days.map(function(x){var it=trOn(x);
+    return '<div class="trday'+(x===td?' now':'')+'"><div class="trh">'+niceDate(x)+(x===td?' - today':'')+'</div>'+
+    (it.length?'<ul class="tasks">'+it.map(function(e){var dn=(e.doneOn||[]).indexOf(x)>=0;
+      return '<li class="'+(dn?'trdone':'')+'"><input type="checkbox" data-trdone="'+e.id+'|'+x+'"'+(dn?' checked':'')+' aria-label="Done"><div class="tt"><b>'+esc(e.type)+'</b>'+(e.note||e.rep==="week"?'<div class="meta">'+esc(e.note||"")+(e.note&&e.rep==="week"?" · ":"")+(e.rep==="week"?"every week":"")+'</div>':'')+'</div><button class="x" data-trdel="'+e.id+'">'+(e.rep==="week"?'Delete series':'Delete')+'</button></li>'}).join("")+'</ul>':'<p class="meta" style="margin:2px 0">Nothing planned</p>')+'</div>'}).join("")+'</section>';
+  return h}
+function bindTrain(){
+  var f=document.getElementById("trf");if(!f)return;
+  var sel=document.getElementById("trt"),nl=document.getElementById("trnl"),msg=document.getElementById("trmsg");
+  sel.onchange=function(){nl.hidden=sel.value!=="__new";if(!nl.hidden)document.getElementById("trn").focus()};
+  f.onsubmit=function(e){e.preventDefault();msg.textContent="";
+    var picked=[];f.querySelectorAll("input[name=trd]:checked").forEach(function(c){picked.push(+c.value)});
+    if(!picked.length){msg.textContent="Pick at least one day.";return}
+    var type=sel.value;
+    if(type==="__new"){type=document.getElementById("trn").value.trim();
+      if(!type){msg.textContent="Type a name for the new training.";return}
+      var ts=load("trainTypes");if(ts.indexOf(type)<0&&TR_TYPES.indexOf(type)<0){ts.push(type);if(!save("trainTypes",ts))return}}
+    var ws=weekStart(trAnchor),list=load("training"),note=document.getElementById("trnote").value.trim(),rep=document.getElementById("trr").value;
+    picked.forEach(function(k){list.push({id:Date.now()+k,date:addDays(ws,k),type:type,note:note,rep:rep,doneOn:[]})});
+    if(save("training",list))render()};
+  document.querySelectorAll("button[data-trn]").forEach(function(b){b.onclick=function(){var n=+b.dataset.trn;trAnchor=n===0?todayStr():addDays(trAnchor,7*n);render()}});
+  document.querySelectorAll("input[data-trdone]").forEach(function(c){c.onchange=function(){var pr=c.dataset.trdone.split("|"),list=load("training");
+    list.forEach(function(e){if(String(e.id)===pr[0]){e.doneOn=e.doneOn||[];var k=e.doneOn.indexOf(pr[1]);if(c.checked&&k<0)e.doneOn.push(pr[1]);if(!c.checked&&k>=0)e.doneOn.splice(k,1)}});
+    if(save("training",list))render()}});
+  document.querySelectorAll("button[data-trdel]").forEach(function(b){b.onclick=function(){save("training",load("training").filter(function(e){return String(e.id)!==b.dataset.trdel}));render()}})}
 function later(p){return '<h1>'+p+'</h1><p class="sub">Not built yet.</p><section class="card later"><p class="empty">'+LATER[p]+'</p></section>'}
 
 function render(){refreshCats();
@@ -662,7 +734,7 @@ function render(){refreshCats();
   if(PAGES.indexOf(p)<0)p="Today";
   document.getElementById("nav").innerHTML=PAGES.map(function(n){
     return '<a href="#'+n+'"'+(n===p?' class="on" aria-current="page"':'')+'>'+n+'</a>'}).join("");
-  document.getElementById("page").innerHTML=p==="Today"?today():p==="Tasks"?tasksPage():p==="Calendar"?calPage():p==="Settings"?settingsPage():p==="Time"?timePage():p==="Money"?moneyPage():p==="Portfolio"?portfolioPage():later(p);bindTasks();bindCal();bindSettings();bindTime();bindTimeGraph();bindGoals();bindMoney();bindPf();
+  document.getElementById("page").innerHTML=p==="Today"?today():p==="Tasks"?tasksPage():p==="Calendar"?calPage():p==="Training"?trainPage():p==="Settings"?settingsPage():p==="Time"?timePage():p==="Money"?moneyPage():p==="Portfolio"?portfolioPage():later(p);bindTasks();bindCal();bindTrain();bindSettings();bindTime();bindTimeGraph();bindGoals();bindMoney();bindPf();
   document.title=p+" - My Dashboard";
   if(p==="Today"){
     var t=document.getElementById("note");t.value=getNote();
