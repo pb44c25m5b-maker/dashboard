@@ -204,6 +204,15 @@ ul.tasks li.trdone .tt{text-decoration:line-through;color:var(--muted)}
   #trf .t,#trf .trmsg,#trf button[type=submit]{grid-column:1/-1}
   #trf select,#trf input:not([type=checkbox]){box-sizing:border-box;width:100%!important;min-width:0;max-width:100%}
 }
+
+/* wishlist */
+ul.tasks li>span.meta{flex:none;margin:0}
+@media(max-width:900px){
+  #wf{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-items:end}
+  #wf label{min-width:0;flex:none}
+  #wf .t,#wf button[type=submit]{grid-column:1/-1}
+  #wf input,#wf select{box-sizing:border-box;width:100%!important;min-width:0;max-width:100%}
+}
 </style>
 </head>
 <body>
@@ -214,7 +223,7 @@ ul.tasks li.trdone .tt{text-decoration:line-through;color:var(--muted)}
 <main id="page"></main>
 
 <script>
-var PAGES=["Today","Tasks","Calendar","Time","Training","Money","Portfolio","Settings"];
+var PAGES=["Today","Tasks","Calendar","Time","Training","Money","Wishlist","Portfolio","Settings"];
 var LATER={Calendar:"Your appointments and weekly schedule will live here.",
 Time:"Quick add for Anki, studying, martial arts, work, eating, sleep and other, with graphs.",
 Money:"Quick add for income and costs, with monthly totals and graphs.",
@@ -676,7 +685,7 @@ function today(){
   ["Time logged today","No hours logged yet."],["Sleep","No sleep logged yet."],["Money this month","No income or costs yet."]];
   var h='<h1>Today</h1><p class="sub">'+d+'</p>'+backupLine()+'<div class="grid">';
   h+='<section class="card note"><h2>Reminder</h2><textarea id="note" aria-label="Reminder note"></textarea><p class="saved" id="saved"></p></section>';
-  cards.forEach(function(c,i){if(i===1)h+=todoCard();if(c[0]==="Portfolio"){h+=pfCard();return}if(c[0]==="Appointments"){h+=apptCard();return}if(c[0]==="Time logged today"){h+=timeCard()+goalsProgress();return}if(c[0]==="Sleep"){h+=sleepCard();return}if(c[0]==="Money this month"){h+=moneyCard();return}h+='<section class="card"><h2>'+c[0]+'</h2><p class="empty">'+c[1]+'</p></section>'});
+  cards.forEach(function(c,i){if(i===1)h+=todoCard()+wishCard();if(c[0]==="Portfolio"){h+=pfCard();return}if(c[0]==="Appointments"){h+=apptCard();return}if(c[0]==="Time logged today"){h+=timeCard()+goalsProgress();return}if(c[0]==="Sleep"){h+=sleepCard();return}if(c[0]==="Money this month"){h+=moneyCard();return}h+='<section class="card"><h2>'+c[0]+'</h2><p class="empty">'+c[1]+'</p></section>'});
   return h+'</div>';
 }
 
@@ -727,6 +736,39 @@ function bindTrain(){
     list.forEach(function(e){if(String(e.id)===pr[0]){e.doneOn=e.doneOn||[];var k=e.doneOn.indexOf(pr[1]);if(c.checked&&k<0)e.doneOn.push(pr[1]);if(!c.checked&&k>=0)e.doneOn.splice(k,1)}});
     if(save("training",list))render()}});
   document.querySelectorAll("button[data-trdel]").forEach(function(b){b.onclick=function(){save("training",load("training").filter(function(e){return String(e.id)!==b.dataset.trdel}));render()}})}
+
+/* ---------- Wishlist / shopping ---------- */
+function wishSort(a,b){var pr={High:0,Medium:1,Low:2};return (a.kind==="need"?0:1)-(b.kind==="need"?0:1)||(pr[a.prio]===undefined?1:pr[a.prio])-(pr[b.prio]===undefined?1:pr[b.prio])||a.name.localeCompare(b.name)}
+function wishRow(w){return '<li class="'+(w.bought?"trdone":"")+'"><input type="checkbox" data-wb="'+w.id+'"'+(w.bought?" checked":"")+' aria-label="Bought"><div class="tt"><b>'+esc(w.name)+'</b>'+(w.note?'<div class="meta">'+esc(w.note)+'</div>':'')+'</div>'+(w.price?'<span class="meta">'+fe(w.price)+'</span>':'')+'<span class="pill '+esc(w.prio)+'">'+esc(w.prio)+'</span><button class="x" data-wdel="'+w.id+'">Delete</button></li>'}
+function wishCard(){
+  var open=load("wishlist").filter(function(w){return!w.bought}).sort(wishSort);
+  if(!open.length)return '<section class="card"><h2>Shopping list</h2><p class="empty">Nothing to buy. <a href="#Wishlist">Add an item</a>.</p></section>';
+  var needs=open.filter(function(w){return w.kind==="need"}).length,total=open.reduce(function(a,w){return a+(w.price||0)},0);
+  return '<section class="card"><h2>Shopping list</h2><p class="meta">'+needs+' to buy · '+(open.length-needs)+' wishes'+(total?' · '+fe(total):'')+'</p><ul class="tasks">'+open.slice(0,5).map(wishRow).join("")+'</ul>'+(open.length>5?'<p class="meta"><a href="#Wishlist">+ '+(open.length-5)+' more</a></p>':'')+'</section>'}
+function wishPage(){
+  var all=load("wishlist").sort(wishSort),open=all.filter(function(w){return!w.bought}),bought=all.filter(function(w){return w.bought});
+  var needs=open.filter(function(w){return w.kind==="need"}),wishes=open.filter(function(w){return w.kind!=="need"});
+  function sum(l){return l.reduce(function(a,w){return a+(w.price||0)},0)}
+  function sec(t,l,empty){return '<section class="card" style="margin-bottom:14px"><h2>'+t+'</h2>'+(l.length?'<ul class="tasks">'+l.map(wishRow).join("")+'</ul>':'<p class="empty">'+empty+'</p>')+'</section>'}
+  return '<h1>Wishlist</h1><p class="sub">Things you need to buy and things you wish for.</p>'+
+  '<form class="form" id="wf"><label class="t">Item<input id="wn" required maxlength="80" placeholder="e.g. Running shoes"></label>'+
+  '<label>Type<select id="wk"><option value="need">Need to buy</option><option value="wish">Wish</option></select></label>'+
+  '<label>Priority<select id="wp"><option>High</option><option selected>Medium</option><option>Low</option></select></label>'+
+  '<label>Price € (optional)<input id="wpr" type="number" min="0" step="0.01" inputmode="decimal"></label>'+
+  '<label class="t">Note (optional)<input id="wnote" maxlength="120" placeholder="e.g. size 42, shop, link"></label>'+
+  '<button type="submit">Add item</button></form>'+
+  '<section class="card" style="margin-bottom:14px"><h2>Summary</h2>'+(open.length?'<p class="meta">Need to buy: '+needs.length+(sum(needs)?' ('+fe(sum(needs))+')':'')+'</p><p class="meta">Wishes: '+wishes.length+(sum(wishes)?' ('+fe(sum(wishes))+')':'')+'</p><p><b>Total still open: '+fe(sum(open))+'</b></p>':'<p class="empty">Nothing on your list yet.</p>')+'</section>'+
+  sec("Need to buy",needs,"Nothing you need to buy.")+sec("Wishlist",wishes,"No wishes yet.")+
+  (bought.length?'<section class="card"><h2>Bought</h2><ul class="tasks">'+bought.map(wishRow).join("")+'</ul><p><button class="alt" id="wclear">Clear bought items</button></p></section>':'')}
+function bindWish(){
+  var f=document.getElementById("wf");
+  if(f)f.onsubmit=function(e){e.preventDefault();var n=document.getElementById("wn").value.trim();if(!n)return;
+    var pv=parseFloat(document.getElementById("wpr").value),l=load("wishlist");
+    l.push({id:Date.now(),name:n,kind:document.getElementById("wk").value,prio:document.getElementById("wp").value,price:isNaN(pv)||pv<0?0:pv,note:document.getElementById("wnote").value.trim(),bought:false});
+    if(save("wishlist",l))render()};
+  document.querySelectorAll("input[data-wb]").forEach(function(c){c.onchange=function(){var l=load("wishlist");l.forEach(function(w){if(String(w.id)===c.dataset.wb)w.bought=c.checked});if(save("wishlist",l))render()}});
+  document.querySelectorAll("button[data-wdel]").forEach(function(b){b.onclick=function(){save("wishlist",load("wishlist").filter(function(w){return String(w.id)!==b.dataset.wdel}));render()}});
+  var c=document.getElementById("wclear");if(c)c.onclick=function(){save("wishlist",load("wishlist").filter(function(w){return!w.bought}));render()}}
 function later(p){return '<h1>'+p+'</h1><p class="sub">Not built yet.</p><section class="card later"><p class="empty">'+LATER[p]+'</p></section>'}
 
 function render(){refreshCats();
@@ -734,7 +776,7 @@ function render(){refreshCats();
   if(PAGES.indexOf(p)<0)p="Today";
   document.getElementById("nav").innerHTML=PAGES.map(function(n){
     return '<a href="#'+n+'"'+(n===p?' class="on" aria-current="page"':'')+'>'+n+'</a>'}).join("");
-  document.getElementById("page").innerHTML=p==="Today"?today():p==="Tasks"?tasksPage():p==="Calendar"?calPage():p==="Training"?trainPage():p==="Settings"?settingsPage():p==="Time"?timePage():p==="Money"?moneyPage():p==="Portfolio"?portfolioPage():later(p);bindTasks();bindCal();bindTrain();bindSettings();bindTime();bindTimeGraph();bindGoals();bindMoney();bindPf();
+  document.getElementById("page").innerHTML=p==="Today"?today():p==="Tasks"?tasksPage():p==="Calendar"?calPage():p==="Training"?trainPage():p==="Wishlist"?wishPage():p==="Settings"?settingsPage():p==="Time"?timePage():p==="Money"?moneyPage():p==="Portfolio"?portfolioPage():later(p);bindTasks();bindCal();bindTrain();bindWish();bindSettings();bindTime();bindTimeGraph();bindGoals();bindMoney();bindPf();
   document.title=p+" - My Dashboard";
   if(p==="Today"){
     var t=document.getElementById("note");t.value=getNote();
